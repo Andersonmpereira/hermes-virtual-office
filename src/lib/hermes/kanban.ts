@@ -1161,14 +1161,25 @@ export async function listAgents(
 
   const active = activeTaskByAssignee(tasks)
 
+  // Departamento do escritório (office.db). Falha aqui não pode esconder o roster.
+  let assignments = new Map<string, string>()
+  try {
+    const officeDb = await import('../office/db')
+    assignments = officeDb.listAgentDepartments()
+  } catch {
+    assignments = new Map()
+  }
+  const { seatDivision } = await import('../office/org')
+
   // Soul per agent: baca marker office (role/divisi/domains). Fallback ke keyword nama.
   const souls = await Promise.all(names.map((n) => readSoul(n)))
   const meta = names.map((name, i) => {
     const soul = souls[i]
     const parsed = soul ? parseSoulMarker(soul) : {}
     const role = parsed.role ?? roleFor(name)
-    const division = parsed.division ?? divisionFor(role)
-    return { name, soul, role, division, domains: parsed.domains ?? [] as string[] }
+    const orgDepartment = assignments.get(name) ?? null
+    const division = seatDivision(parsed.division ?? divisionFor(role), orgDepartment)
+    return { name, soul, role, division, orgDepartment, domains: parsed.domains ?? [] as string[] }
   })
 
   // Meja PER DIVISI dulu, lalu meja KOSONG divisi lain (lihat `assignDesks`): yang punya
@@ -1179,7 +1190,7 @@ export async function listAgents(
     meta.map((m) => ({ name: m.name, division: m.division, role: m.role, busy: active.has(m.name) })),
   )
 
-  return meta.map(({ name, soul, role, division, domains }) => {
+  return meta.map(({ name, soul, role, division, orgDepartment, domains }) => {
     const task = active.get(name)
     // Menunggu manusia MENGALAHKAN working/review: agent yang berhenti menunggu keputusan
     // tidak boleh tampil sedang bekerja. Kursinya tetap — dia masih memegang task itu.
@@ -1195,6 +1206,7 @@ export async function listAgents(
       displayName: name,
       role,
       division,
+      orgDepartment,
       soulExists: soul != null,
       domains,
       deskIndex: seatOf.get(name) ?? null,

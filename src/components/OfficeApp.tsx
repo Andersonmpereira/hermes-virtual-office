@@ -37,6 +37,7 @@ export default function OfficeApp() {
   const setNewTaskOpen = useOffice((s) => s.setNewTaskOpen)
   const tasks = useOffice((s) => s.tasks)
   const agents = useOffice((s) => s.agents)
+  const loading = useOffice((s) => s.loading)
   const error = useOffice((s) => s.error)
   const meeting = useOffice((s) => s.meeting)
   const select = useOffice((s) => s.select)
@@ -56,6 +57,7 @@ export default function OfficeApp() {
   const [nameOpen, setNameOpen] = useState(false)
   /** Slot of a dummy avatar that was clicked, if any. */
   const [spawnSlot, setSpawnSlot] = useState<{ avatarId: string; division: AgentDivision } | null>(null)
+  const officeName = useOffice((s) => s.officeName)
   const loadOffice = useOffice((s) => s.loadOffice)
 
   async function logout() {
@@ -139,7 +141,7 @@ export default function OfficeApp() {
       {/* ------------------------------------------------------- top bar */}
       <header ref={barRef} className="vp-topbar">
         <div className="vp-topbar-brand flex items-center gap-3">
-          <span className="vp-logo">Hermes Office</span>
+          <span className="vp-logo">{officeName}</span>
           <span className={`vp-dot ${backendOnline ? 'ok' : 'bad'}`} />
           <span className="vp-muted vp-topbar-status">
             {backendOnline ? `${agents.length} agentes · ${running} em execução · ${pct}% concluído` : 'servidor indisponível'}
@@ -226,6 +228,12 @@ export default function OfficeApp() {
             void loadOffice()
           }}
         />
+      )}
+
+      {!loading && agents.length === 0 && (
+        <div className="vp-banner" role="status">
+          Nenhum agente disponível. O escritório mostra só os perfis reais do Hermes.
+        </div>
       )}
 
       {error && (

@@ -6,6 +6,7 @@ import type { AvatarState } from './office/types'
 import type { Health } from './office/health'
 import type { CronPulse, WorkSignals, A2aPair } from './office/duty'
 import { fetchJson } from './api'
+import { OFFICE_BRAND } from './office/org'
 
 const POLL_MS = Number(process.env.NEXT_PUBLIC_POLL_MS || 4000)
 
@@ -78,7 +79,7 @@ export const useOffice = create<State>((set) => ({
   openTaskId: null,
   newTaskOpen: false,
 
-  officeName: 'Hermes Office',
+  officeName: OFFICE_BRAND,
   avatars: [],
 
   // Mulai dari TIDAK TAHU, bukan dari hijau. Sistem yang belum selesai membaca keadaannya
@@ -144,7 +145,7 @@ export const useOffice = create<State>((set) => ({
     }>('/api/hermes/office', { cache: 'no-store' })
     if (!res.ok || !res.data) return
     set({
-      officeName: res.data.name || 'Hermes Office',
+      officeName: res.data.name || OFFICE_BRAND,
       avatars: res.data.avatars || [],
     })
   },

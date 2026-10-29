@@ -30,6 +30,7 @@ export default function Scene3D({ onScene, onDummy, onBoard, onName }: Props) {
   const setPeek = useOffice((s) => s.setPeek)
   const select = useOffice((s) => s.select)
   const openTask = useOffice((s) => s.openTask)
+  const officeName = useOffice((s) => s.officeName)
   const saveAvatars = useOffice((s) => s.saveAvatars)
 
   // Handlers live in a ref so the scene is created ONCE but always calls the
@@ -77,6 +78,10 @@ export default function Scene3D({ onScene, onDummy, onBoard, onName }: Props) {
   useEffect(() => {
     sceneRef.current?.syncAvatars(avatars, agents)
   }, [avatars, agents])
+
+  useEffect(() => {
+    sceneRef.current?.setOfficeTitle(officeName)
+  }, [officeName])
 
   useEffect(() => {
     sceneRef.current?.setTasks(tasks)

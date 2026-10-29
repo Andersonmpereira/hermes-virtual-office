@@ -422,13 +422,15 @@ export function createScene(
    * exactly what spawning should look like.
    */
   function syncAvatars(rows: AvatarState[], agents: Agent[]) {
-    avatarRows = rows
     agentRows = agents
     const agentByName = new Map(agents.map((a) => [a.name, a]))
+    // Posição só vale para um perfil real. Linha de demonstração (`dummy:`) não vira corpo.
+    const trusted = rows.filter((r) => agentByName.has(r.name) && !r.avatarId.startsWith('dummy:'))
+    avatarRows = trusted
 
     // Every roster name needs a row. Synthesise one at the entrance for any agent
     // the DB has never seen, and feed it through the same path as the rest.
-    const known = new Set(rows.map((r) => r.name))
+    const known = new Set(trusted.map((r) => r.name))
     const missing: AvatarState[] = agents
       .filter((a) => !known.has(a.name))
       .map((a) => ({
@@ -449,7 +451,7 @@ export function createScene(
         anchored: false,
         updatedAt: new Date().toISOString(),
       }))
-    const all = missing.length ? [...rows, ...missing] : rows
+    const all = missing.length ? [...trusted, ...missing] : trusted
 
     // Drop bodies the DB no longer lists AND the roster no longer has, UNLESS they
     // are real agents leaving.
@@ -896,6 +898,8 @@ export function createScene(
     if (!events.onSaveAvatars) return
     const out: AvatarState[] = []
     for (const a of avatars) {
+      // Corpo de demonstração não volta para o banco no flush periódico.
+      if (a.kind === 'dummy' || a.avatarId.startsWith('dummy:')) continue
       const g = a.avatar.group
       // REPORT WHAT IS ON SCREEN, not the destination.
       //
@@ -1361,6 +1365,9 @@ export function createScene(
      */
     setHealth(level: Health['level']) {
       office.setHealth(level)
+    },
+    setOfficeTitle(title: string) {
+      office.setOfficeTitle(title)
     },
     start,
     stop,

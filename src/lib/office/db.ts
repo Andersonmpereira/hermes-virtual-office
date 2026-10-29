@@ -20,6 +20,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import type { AgentDivision } from '@/types/hermes'
+import { OFFICE_BRAND } from './org'
 import type { AvatarKind, AvatarState, AvatarWrite } from './types'
 
 export type { AvatarKind, AvatarState, AvatarWrite } from './types'
@@ -64,6 +65,12 @@ export function officeDb(): DatabaseSync {
       anchored   INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS agent_department (
+      name        TEXT PRIMARY KEY,
+      department  TEXT NOT NULL,
+      updated_at  TEXT NOT NULL
+    );
   `)
   // Additive migrations for databases created by an earlier version.
   // `CREATE TABLE IF NOT EXISTS` does NOT add columns to a table that already
@@ -94,14 +101,18 @@ const now = () => new Date().toISOString()
 
 /* ------------------------------------------------------------------ meta -- */
 
-export const DEFAULT_OFFICE_NAME = 'Hermes Office'
+export const DEFAULT_OFFICE_NAME = OFFICE_BRAND
+/** Nome de fábrica da versão anterior. Só este valor sobe para a marca; um nome já escolhido fica. */
+const LEGACY_OFFICE_NAME = 'Hermes Office'
 
 /** The office name shown (and editable) in the lobby. */
 export function getOfficeName(): string {
   const row = officeDb().prepare(`SELECT value FROM office_meta WHERE key = 'name'`).get() as
     | { value: string }
     | undefined
-  return row?.value ?? DEFAULT_OFFICE_NAME
+  if (!row) return DEFAULT_OFFICE_NAME
+  if (row.value === LEGACY_OFFICE_NAME) return setOfficeName(DEFAULT_OFFICE_NAME)
+  return row.value
 }
 
 export function setOfficeName(value: string): string {
@@ -113,6 +124,29 @@ export function setOfficeName(value: string): string {
     )
     .run(clean, now())
   return clean
+}
+
+/* ----------------------------------------------------------- departments -- */
+
+/** Associação agente → departamento. Não cria perfil Hermes e não apaga tarefa. */
+export function listAgentDepartments(): Map<string, string> {
+  const rows = officeDb()
+    .prepare(`SELECT name, department FROM agent_department`)
+    .all() as { name: string; department: string }[]
+  return new Map(rows.map((r) => [r.name, r.department]))
+}
+
+export function setAgentDepartment(name: string, department: string): void {
+  officeDb()
+    .prepare(
+      `INSERT INTO agent_department (name, department, updated_at) VALUES (?, ?, ?)
+       ON CONFLICT(name) DO UPDATE SET department = excluded.department, updated_at = excluded.updated_at`,
+    )
+    .run(name, department, now())
+}
+
+export function clearAgentDepartment(name: string): void {
+  officeDb().prepare(`DELETE FROM agent_department WHERE name = ?`).run(name)
 }
 
 /* ----------------------------------------------------------------- avatars -- */
@@ -266,6 +300,18 @@ export type DummySpec = {
   facing: number
   /** Pinned in place forever — the receptionist never leaves the counter. */
   anchored?: boolean
+}
+
+/**
+ * Apaga só o elenco de demonstração (`dummy:…`) do banco do escritório.
+ * Não toca em `agent:<nome>` — perfil, sessão e tarefa do Hermes ficam fora daqui.
+ * Chamar de novo não recria ninguém.
+ */
+export function removeDemoAvatars(): number {
+  const r = officeDb()
+    .prepare(`DELETE FROM avatar_state WHERE avatar_id LIKE 'dummy:%'`)
+    .run() as { changes: number }
+  return Number(r?.changes ?? 0)
 }
 
 export function seedAvatars(specs: DummySpec[]): number {

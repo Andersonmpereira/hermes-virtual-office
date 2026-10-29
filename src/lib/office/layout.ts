@@ -1,5 +1,6 @@
 import type { Activity } from './anim'
 import type { AgentDivision, AgentRole } from '@/types/hermes'
+import { plaqueForRoom } from './org'
 
 /**
  * Office layout: the single source of truth for every placement.
@@ -2212,7 +2213,7 @@ export const ROOM_PLAQUES: {
   const at = PLAQUE_AT[id]
   return {
     id,
-    text: MEETING_SET.has(id) ? `R. MEETING ${r.label}` : r.label,
+    text: plaqueForRoom(id) ?? (MEETING_SET.has(id) ? `R. MEETING ${r.label}` : r.label),
     x: at.x,
     y: r.level * LEVEL_H + PLAQUE_Y,
     z: at.z,

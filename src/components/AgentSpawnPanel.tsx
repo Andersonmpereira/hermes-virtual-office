@@ -5,6 +5,7 @@ import { fetchJson } from '@/lib/api'
 import ModelPicker, { type ModelChoice } from './ModelPicker'
 import type { AgentDivision, AgentRole } from '@/types/hermes'
 import { DIVISION_LABEL } from '@/types/hermes'
+import { AGENT_STATUS_LABEL, ORG_DEPARTMENTS } from '@/lib/office/org'
 import { ROLE_LABEL } from '@/lib/hermes/soul'
 import FullPanel from './FullPanel'
 import RestartNotice from './RestartNotice'
@@ -32,6 +33,10 @@ type Row = {
   role?: AgentRole | string | null
   /** Divisi dari route agents GET; null/undefined bila backend lama. */
   division?: AgentDivision | string | null
+  /** Departamento do escritório. null = ainda não associado. */
+  orgDepartment?: string | null
+  /** Status real do Hermes, quando a rota o enviou. */
+  status?: string | null
   /** True bila profil punya SOUL.md sendiri. */
   soulExists?: boolean | null
   /** Keahlian/domain (dipakai office, bukan A2A). */
@@ -92,7 +97,7 @@ export default function AgentSpawnPanel({
    *  (ganti model profil yang sudah ada) supaya dua alur itu tidak saling menimpa. */
   const [newModel, setNewModel] = useState('')
   const [soulPreview, setSoulPreview] = useState<string | null>(null)
-  const [divFilter, setDivFilter] = useState<'all' | AgentDivision>('all')
+  const [deptFilter, setDeptFilter] = useState<string>('all')
   const [creating, setCreating] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   /** id awaiting the second click before a destructive delete. */
@@ -329,11 +334,30 @@ export default function AgentSpawnPanel({
     }
   }
 
+  async function assignDepartment(name: string, department: string) {
+    setBusy(name)
+    setErr(null)
+    try {
+      const res = await fetchJson('/api/hermes/office', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'setDepartment', name, department }),
+      })
+      if (!res.ok) throw new Error(res.error || 'não foi possível salvar o departamento')
+      await load()
+      onChanged()
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
   if (!open) return null
 
-  const matchDiv = (r: Row) => divFilter === 'all' || r.division === divFilter
-  const inOffice = rows.filter((r) => r.inOffice && matchDiv(r))
-  const out = rows.filter((r) => !r.inOffice && matchDiv(r))
+  const matchDept = (r: Row) =>
+    deptFilter === 'all' || (deptFilter === 'none' ? !r.orgDepartment : r.orgDepartment === deptFilter)
+  const inOffice = rows.filter((r) => r.inOffice && matchDept(r))
+  const out = rows.filter((r) => !r.inOffice && matchDept(r))
 
   /** Badge role + divisi + indikator soul + status A2A. Aman bila field null (backend lama). */
   function badges(r: Row) {
@@ -347,8 +371,18 @@ export default function AgentSpawnPanel({
           </span>
         )}
         {divLabel && (
-          <span className="vp-chip" title={`divisi: ${r.division}`}>
+          <span className="vp-chip" title="Divisão gravada no perfil Hermes. O departamento do escritório é outra coisa.">
             {divLabel}
+          </span>
+        )}
+        {r.status && AGENT_STATUS_LABEL[r.status] && (
+          <span className="vp-chip" title={`status Hermes: ${r.status}`}>
+            {AGENT_STATUS_LABEL[r.status]}
+          </span>
+        )}
+        {r.model && (
+          <span className="vp-chip" title="modelo padrão do perfil">
+            {r.model}
           </span>
         )}
         {(r.domains?.length ?? 0) > 0 && (
@@ -619,17 +653,38 @@ export default function AgentSpawnPanel({
         </>
       )}
 
-      <div className="vp-sub">FILTRAR DIVISÃO</div>
+      <div className="vp-sub">DEPARTAMENTOS</div>
+      <div className="flex flex-col gap-1">
+        {ORG_DEPARTMENTS.map((d) => {
+          const n = rows.filter((r) => r.inOffice && r.orgDepartment === d.id).length
+          return (
+            <div key={d.id} className="vp-kv" title={d.note}>
+              <span>{d.label}</span>
+              <b>
+                {n} {n === 1 ? 'agente' : 'agentes'}
+                {d.desks > 0 ? ` · ${d.desks} ${d.desks === 1 ? 'mesa' : 'mesas'}` : ' · sem mesas próprias'}
+              </b>
+            </div>
+          )
+        })}
+      </div>
+      <p className="vp-muted" style={{ fontSize: 12 }}>
+        Associar um agente muda só o escritório. O perfil, as tarefas e o histórico do Hermes permanecem.
+        Uma mesa vazia não é um agente.
+      </p>
+
+      <div className="vp-sub">FILTRAR DEPARTAMENTO</div>
       <select
         className="vp-input"
-        value={divFilter}
-        onChange={(e) => setDivFilter(e.target.value as 'all' | AgentDivision)}
-        title="Filtra a lista de agentes por divisão"
+        value={deptFilter}
+        onChange={(e) => setDeptFilter(e.target.value)}
+        title="Filtra a lista pelo departamento do escritório"
       >
-        <option value="all">Todas</option>
-        {DIVISION_OPTIONS.map(([v, label]) => (
-          <option key={v} value={v}>
-            {label}
+        <option value="all">Todos</option>
+        <option value="none">Sem departamento</option>
+        {ORG_DEPARTMENTS.map((d) => (
+          <option key={d.id} value={d.id}>
+            {d.label}
           </option>
         ))}
       </select>
@@ -645,6 +700,20 @@ export default function AgentSpawnPanel({
               </b>
               <i>{r.total} tarefas</i>
               {badges(r)}
+              <select
+                className="vp-input"
+                value={r.orgDepartment ?? ''}
+                disabled={busy === r.name}
+                title="Departamento no escritório. Não altera o perfil Hermes."
+                onChange={(e) => void assignDepartment(r.name, e.target.value)}
+              >
+                <option value="">Sem departamento</option>
+                {ORG_DEPARTMENTS.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
               {limits(r)}
             </div>
             {/* The profile's default model: what its workers and chats run.
@@ -739,6 +808,20 @@ export default function AgentSpawnPanel({
                         : 'sem tarefas'}
                   </i>
                   {badges(r)}
+                  <select
+                    className="vp-input"
+                    value={r.orgDepartment ?? ''}
+                    disabled={busy === r.name}
+                    title="Departamento no escritório. Não altera o perfil Hermes."
+                    onChange={(e) => void assignDepartment(r.name, e.target.value)}
+                  >
+                    <option value="">Sem departamento</option>
+                    {ORG_DEPARTMENTS.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.label}
+                      </option>
+                    ))}
+                  </select>
                   {limits(r)}
                 </div>
                 <button

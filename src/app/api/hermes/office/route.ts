@@ -4,12 +4,14 @@ import {
   claimAvatar,
   getOfficeName,
   listAvatars,
+  removeDemoAvatars,
   saveAvatars,
-  seedAvatars,
+  setAgentDepartment,
   setOfficeName,
+  clearAgentDepartment,
   type AvatarWrite,
 } from '@/lib/office/db'
-import { dummyRoster } from '@/lib/office/dummy-roster'
+import { isOrgDepartment, ORG_DEPARTMENTS } from '@/lib/office/org'
 import { assertLocalWriteRequest } from '@/lib/local-guard'
 import type { AgentDivision } from '@/types/hermes'
 
@@ -27,12 +29,13 @@ export async function GET(req: Request) {
   const unauthorized = requireSession(req)
   if (unauthorized) return unauthorized
   try {
-    // First run: populate the dummy roster so the building is not empty. Idempotent
-    // — it only fires when the table has no rows at all.
-    seedAvatars(dummyRoster())
+    // O elenco de demonstração (Dev Staff, recepção, etc.) não volta no refresh.
+    // Só some do banco do escritório. Perfis do Hermes não são apagados.
+    removeDemoAvatars()
     return NextResponse.json({
       name: getOfficeName(),
       avatars: listAvatars(),
+      departments: ORG_DEPARTMENTS,
     })
   } catch (err) {
     return NextResponse.json(
@@ -45,6 +48,7 @@ export async function GET(req: Request) {
 type Body = {
   action?: string
   name?: string
+  department?: string
   avatarId?: string
   list?: AvatarWrite[]
   asker?: string
@@ -91,10 +95,33 @@ export async function POST(req: NextRequest) {
       case 'setName': {
         return NextResponse.json({ name: setOfficeName(String(body.name ?? '')) })
       }
+      case 'setDepartment': {
+        const agentName = String(body.name ?? '').trim().toLowerCase()
+        const department = String(body.department ?? '').trim()
+        if (!agentName || agentName.length > 64 || !/^[a-z0-9][a-z0-9_-]*$/.test(agentName)) {
+          return NextResponse.json(
+            { error: { code: 'invalid_request', message: 'informe o nome do agente', status: 400 } },
+            { status: 400 },
+          )
+        }
+        if (!department) {
+          clearAgentDepartment(agentName)
+          return NextResponse.json({ name: agentName, department: null })
+        }
+        if (!isOrgDepartment(department)) {
+          return NextResponse.json(
+            { error: { code: 'invalid_request', message: 'departamento desconhecido', status: 400 } },
+            { status: 400 },
+          )
+        }
+        setAgentDepartment(agentName, department)
+        return NextResponse.json({ name: agentName, department })
+      }
       case 'saveAvatars': {
+        // O cliente não regrava o elenco de demonstração. `agent:<perfil>` passa.
         const list = (Array.isArray(body.list) ? body.list : [])
           .map(cleanAvatar)
-          .filter((a): a is AvatarWrite => a !== null)
+          .filter((a): a is AvatarWrite => a !== null && !a.avatarId.startsWith('dummy:'))
         return NextResponse.json({ saved: saveAvatars(list) })
       }
       case 'claimAvatar': {

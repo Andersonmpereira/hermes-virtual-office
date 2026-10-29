@@ -101,6 +101,11 @@ export type Agent = {
   currentTaskId?: string | null
   /** The profile's default model — what its workers and chats run. */
   model?: string | null
+  /**
+   * Departamento do escritório (office.db). Não faz parte do perfil Hermes.
+   * null quando ninguém associou o agente a uma sala da Dama da Noite.
+   */
+  orgDepartment?: string | null
 }
 
 /**

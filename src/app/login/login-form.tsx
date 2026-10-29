@@ -43,7 +43,7 @@ export default function LoginForm({ unconfigured }: { unconfigured: boolean }) {
   return (
     <main className="grid min-h-dvh place-items-center bg-[#0f1418] px-4 text-slate-100">
       <form onSubmit={(e) => void submit(e)} className="w-full max-w-sm rounded-lg border border-white/10 bg-[#171d22] p-6">
-        <h1 className="text-lg font-semibold">Hermes Office</h1>
+        <h1 className="text-lg font-semibold">Dama da Noite Aromas</h1>
         <p className="mt-1 text-sm text-slate-400">Entre para abrir o escritório virtual.</p>
         {unconfigured ? (
           <p className="mt-4 text-sm text-amber-300" role="alert">

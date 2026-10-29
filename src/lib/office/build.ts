@@ -473,6 +473,8 @@ export type OfficeProps = {
   setTvRacing: (on: boolean) => void
   /** Nyalakan lampu kesehatan di lobby. Warnanya dari `health.ts`, bukan dari sini. */
   setHealth: (level: Health['level']) => void
+  /** Placa da fachada. O texto vem do office.db. */
+  setOfficeTitle: (title: string) => void
   /** Bola lampunya, untuk selftest. */
   healthBulb: THREE.Mesh
   applyPalette: (hour: number) => void
@@ -2474,6 +2476,9 @@ export function buildOffice(scene: THREE.Scene, hour: number) {
   }
 
   /* ---------------------------------------------------------------- lobby -- */
+  let setOfficeTitle = (_title: string) => {
+    void _title
+  }
   {
     // reception counter: an L, with a back panel and a chair
     const g = new THREE.Group()
@@ -2542,11 +2547,19 @@ export function buildOffice(scene: THREE.Scene, hour: number) {
     namePlate.position.set(DOOR.x, 3.5, HALF_D + 0.08)
     namePlate.name = 'office-name-plate'
     group.add(namePlate)
-    const nameMat = new THREE.MeshStandardMaterial({ map: signTexture('HERMES OFFICE'), roughness: 0.55 })
+    const nameMat = new THREE.MeshStandardMaterial({ map: signTexture('DAMA DA NOITE AROMAS'), roughness: 0.55 })
     const nameFace = new THREE.Mesh(new THREE.PlaneGeometry(6.0, 0.8), nameMat)
     nameFace.position.set(DOOR.x, 3.5, HALF_D + 0.15)
     nameFace.name = 'office-name-face'
     group.add(nameFace)
+    const setTitle = (title: string) => {
+      const text = title.trim() || 'DAMA DA NOITE AROMAS'
+      const prev = nameMat.map
+      nameMat.map = signTexture(text.toUpperCase())
+      nameMat.needsUpdate = true
+      prev?.dispose()
+    }
+    setOfficeTitle = setTitle
     // canopy over the entrance, so the doorway reads from above
     const canopy = box(7.0, 0.22, 2.6, 0xe8eef2, { rough: 0.85 })
     canopy.position.set(DOOR.x, 3.1, HALF_D + 1.3)
@@ -3370,6 +3383,7 @@ export function buildOffice(scene: THREE.Scene, hour: number) {
     setTvRacing,
     sun,
     applyPalette,
+    setOfficeTitle,
     dispose,
   }
 }

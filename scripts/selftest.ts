@@ -132,6 +132,7 @@ import {
 } from '../src/lib/office/layout'
 import { BODY_R, blocked, onStairArea, planRoute, route, routeBetween, stairCentre } from '../src/lib/office/nav'
 import { dummyRoster } from '../src/lib/office/dummy-roster'
+import { ORG_DEPARTMENTS, seatDivision } from '../src/lib/office/org'
 import { buildOffice } from '../src/lib/office/build'
 import type { IdleSpot, MeetingRoomId } from '../src/lib/office/layout'
 import type { AgentRole } from '@/types/hermes'
@@ -1211,7 +1212,7 @@ console.log('geometry')
   if (!/const missing: AvatarState\[\] = agents/.test(scene)) {
     problems.push('syncAvatars does not synthesise rows for roster names missing from the DB')
   }
-  if (!/missing\.length \? \[\.\.\.rows, \.\.\.missing\] : rows/.test(scene)) {
+  if (!/missing\.length \? \[\.\.\.trusted, \.\.\.missing\] : trusted/.test(scene)) {
     problems.push('the synthesised rows are not merged into the reconcile list')
   }
   // and the division fallback must not seat an unknown agent with the developers
@@ -1492,6 +1493,40 @@ console.log('geometry')
     problems.length === 0, problems.join(' | '))
 }
 
+// O elenco de demonstração não entra no escritório. Refresh apaga `dummy:`
+// e não recria. Perfis reais (`agent:chris`, `agent:default`) permanecem.
+{
+  const problems: string[] = []
+  const routeSrc = readFileSync(new URL('../src/app/api/hermes/office/route.ts', import.meta.url), 'utf8')
+  const sceneSrc = readFileSync(new URL('../src/lib/office/scene.ts', import.meta.url), 'utf8')
+  const appSrc = readFileSync(new URL('../src/components/OfficeApp.tsx', import.meta.url), 'utf8')
+  if (/seedAvatars\(/.test(routeSrc)) problems.push('a rota ainda semeia o elenco de demonstração')
+  if (!/removeDemoAvatars\(/.test(routeSrc)) problems.push('a rota não remove o elenco de demonstração')
+  if (!/!r\.avatarId\.startsWith\('dummy:'\)/.test(sceneSrc)) problems.push('a cena ainda desenha dummy:')
+  if (!/a\.kind === 'dummy' \|\| a\.avatarId\.startsWith\('dummy:'\)/.test(sceneSrc)) {
+    problems.push('o flush da cena ainda grava dummy:')
+  }
+  if (!/!a\.avatarId\.startsWith\('dummy:'\)/.test(routeSrc)) problems.push('o POST ainda grava dummy:')
+  if (!/Nenhum agente disponível/.test(appSrc)) problems.push('sem mensagem de escritório vazio')
+  check('demo roster is not seeded by the office route', problems.length === 0, problems.join(' | '))
+}
+
+{
+  const problems: string[] = []
+  const texts = new Set(ROOM_PLAQUES.map((p) => p.text))
+  for (const label of ['DIRETORIA', 'SHOPEE', 'MERCADO LIVRE', 'TIKTOK SHOP', 'INTELIGÊNCIA', 'SALA DE REUNIÕES']) {
+    if (!texts.has(label)) problems.push(`placa ausente: ${label}`)
+  }
+  for (const d of ORG_DEPARTMENTS) {
+    const seats = d.division ? desksForDivision(d.division).length : 0
+    if (seats !== d.desks) problems.push(`${d.id}: catálogo diz ${d.desks} mesas, a planta tem ${seats}`)
+  }
+  if (seatDivision('content', 'shopee') !== 'tech') problems.push('Shopee não usa as mesas tech')
+  if (seatDivision('growth', 'inteligencia') !== 'growth') problems.push('Inteligência trocou a divisão Hermes')
+  if (seatDivision('exec', null) !== 'exec') problems.push('agente sem departamento mudou de sala')
+  check('Dama da Noite rooms keep the existing desks', problems.length === 0, problems.join(' | '))
+}
+
 // Meetings are routed by division: one division → its own room; managers+CEO →
 // Merapi; a full cross-division meeting → Rinjani (the ten-seat room).
 {
@@ -1617,6 +1652,85 @@ check('floor plan has real extents', HALF_W > 0 && HALF_D > 0,
 // `readJson` is async and this file compiles to CJS, so the check runs inside an
 // async IIFE and records its own result. Everything else here is synchronous.
 void (async () => {
+  {
+    const problems: string[] = []
+    const testPath = join(tmpdir(), `office-demo-${process.pid}-${Date.now()}.db`)
+    process.env.OFFICE_DB_PATH = testPath
+    try {
+      const db = await import('../src/lib/office/db')
+      db._resetOfficeDbForTest()
+      const seeded = db.seedAvatars(dummyRoster())
+      if (seeded < 1) problems.push('o teste não conseguiu plantar o elenco antigo')
+      db.saveAvatars([
+        { avatarId: 'agent:chris', name: 'chris', division: 'tech', kind: 'agent', x: 3, z: 4, level: 0, activity: 'idle', facing: 0, spawned: true, anchored: false },
+        { avatarId: 'agent:default', name: 'default', division: 'exec', kind: 'agent', x: 1, z: 1, level: 0, activity: 'idle', facing: 0, spawned: true, anchored: false },
+      ])
+      const removed = db.removeDemoAvatars()
+      if (removed < 1) problems.push('nenhum dummy foi removido')
+      const left = db.listAvatars().map((a) => a.avatarId).sort()
+      if (left.some((id) => id.startsWith('dummy:'))) problems.push(`dummy sobreviveu: ${left.join(',')}`)
+      if (!left.includes('agent:chris') || !left.includes('agent:default')) {
+        problems.push(`perfil real sumiu: ${left.join(',')}`)
+      }
+      if (db.removeDemoAvatars() !== 0) problems.push('segunda limpeza recriou ou apagou de novo')
+      if (db.listAvatars().length !== 2) problems.push('a segunda limpeza alterou os perfis reais')
+      db.saveAvatars([
+        { avatarId: 'dummy:tech:0', name: 'Dev Manager', division: 'tech', kind: 'dummy', x: 0, z: 0, level: 0, activity: 'typing', facing: 0, spawned: false, anchored: false },
+      ])
+      const afterWrite = db.removeDemoAvatars()
+      if (afterWrite < 1) problems.push('um dummy plantado de novo não foi apagado no refresh')
+      const kept = db.listAvatars().map((a) => a.avatarId).sort()
+      if (kept.some((id) => id.startsWith('dummy:')) || kept.length !== 2) {
+        problems.push(`refresh não deixou só os perfis reais: ${kept.join(',')}`)
+      }
+    } catch (e) {
+      problems.push(`THREW: ${(e as Error).message}`)
+    } finally {
+      const db = await import('../src/lib/office/db')
+      db._resetOfficeDbForTest()
+      delete process.env.OFFICE_DB_PATH
+      for (const suffix of ['', '-wal', '-shm']) {
+        try { rmSync(testPath + suffix) } catch { /* not created */ }
+      }
+    }
+    check('demo avatars are not seeded and do not come back on refresh', problems.length === 0, problems.join(' | '))
+  }
+
+  {
+    const problems: string[] = []
+    const testPath = join(tmpdir(), `office-org-${process.pid}-${Date.now()}.db`)
+    process.env.OFFICE_DB_PATH = testPath
+    try {
+      const db = await import('../src/lib/office/db')
+      db._resetOfficeDbForTest()
+      if (db.getOfficeName() !== 'Dama da Noite Aromas') problems.push(`nome padrão = ${db.getOfficeName()}`)
+      db.setOfficeName('Hermes Office')
+      if (db.getOfficeName() !== 'Dama da Noite Aromas') problems.push('o nome de fábrica antigo não foi atualizado')
+      db.setOfficeName('Loja Norte')
+      if (db.getOfficeName() !== 'Loja Norte') problems.push('um nome já escolhido foi sobrescrito')
+      db.setAgentDepartment('chris', 'shopee')
+      db._resetOfficeDbForTest()
+      const again = db.listAgentDepartments()
+      if (again.get('chris') !== 'shopee') problems.push('a associação não sobreviveu ao reabrir o banco')
+      db.setAgentDepartment('chris', 'mercadolivre')
+      if (db.listAgentDepartments().get('chris') !== 'mercadolivre') problems.push('trocar de departamento não gravou')
+      db.clearAgentDepartment('chris')
+      if (db.listAgentDepartments().has('chris')) problems.push('limpar o departamento apagou outra coisa ou não limpou')
+      const avatars = db.listAvatars()
+      if (avatars.length !== 0) problems.push('a associação criou avatar')
+    } catch (e) {
+      problems.push(`THREW: ${(e as Error).message}`)
+    } finally {
+      const db = await import('../src/lib/office/db')
+      db._resetOfficeDbForTest()
+      delete process.env.OFFICE_DB_PATH
+      for (const suffix of ['', '-wal', '-shm']) {
+        try { rmSync(testPath + suffix) } catch { /* not created */ }
+      }
+    }
+    check('department assignment persists in the office db', problems.length === 0, problems.join(' | '))
+  }
+
   const cases: [string, string, number][] = [
     ['json ok', '{"a":1}', 200],
     ['json error body', '{"error":{"message":"nope"}}', 409],
