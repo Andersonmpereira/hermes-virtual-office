@@ -113,6 +113,7 @@ const loginRoute = readFileSync(path.join('src', 'app', 'api', 'auth', 'login', 
 check('login não registra o corpo', !/console\.(log|info|debug|warn|error)/.test(loginRoute))
 
 const office = readFileSync(path.join('src', 'components', 'OfficeApp.tsx'), 'utf8')
+const loginPage = readFileSync(path.join('src', 'app', 'login', 'page.tsx'), 'utf8')
 const loginForm = readFileSync(path.join('src', 'app', 'login', 'login-form.tsx'), 'utf8')
 const kanban = readFileSync(path.join('src', 'components', 'KanbanColumns.tsx'), 'utf8')
 const layout = readFileSync(path.join('src', 'app', 'layout.tsx'), 'utf8')
@@ -120,6 +121,12 @@ const taskDialog = readFileSync(path.join('src', 'components', 'NewTaskDialog.ts
 check('barra tem Sair', office.includes('Sair'))
 check('barra tem Reunião', office.includes('Reunião'))
 check('login em português', loginForm.includes('Entrar') && loginForm.includes('Senha'))
+check(
+  'login lê o ambiente em cada request',
+  loginPage.includes("export const dynamic = 'force-dynamic'") &&
+    /const jar = await cookies\(\)/.test(loginPage) &&
+    !/if \(authConfigured\(\)\) \{\s*const jar/.test(loginPage),
+)
 check('kanban em português', kanban.includes('CONCLUÍDO') && kanban.includes('EM ANDAMENTO'))
 check('idioma do documento é pt-BR', layout.includes('lang="pt-BR"'))
 check('nova tarefa em português', taskDialog.includes('Nova tarefa') && taskDialog.includes('Enviar para a fila'))
