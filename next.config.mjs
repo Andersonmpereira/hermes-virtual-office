@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Image de produção (EasyPanel / Docker) copia só .next/standalone.
+  output: 'standalone',
   // three.js ships ESM examples; let Next transpile them for the browser bundle
   transpilePackages: ['three'],
   // Dev (`hermes verify` starts it too) must not share .next with the production
