@@ -13,7 +13,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 RUN npm run build
 
-FROM nousresearch/hermes-agent:0.22.5 AS runner
+FROM nousresearch/hermes-agent:v0.22.5 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
