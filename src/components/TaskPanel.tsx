@@ -34,10 +34,10 @@ type Evidence = {
 
 function age(sec: number | null): string {
   if (sec == null || sec < 0) return '—'
-  if (sec < 60) return `${sec} dtk`
-  if (sec < 3600) return `${Math.floor(sec / 60)} mnt`
-  if (sec < 86400) return `${Math.floor(sec / 3600)} jam`
-  return `${Math.floor(sec / 86400)} hari`
+  if (sec < 60) return `${sec} s`
+  if (sec < 3600) return `${Math.floor(sec / 60)} min`
+  if (sec < 86400) return `${Math.floor(sec / 3600)} h`
+  return `${Math.floor(sec / 86400)} d`
 }
 
 /**
@@ -52,7 +52,7 @@ function originLabel(o?: { kind: string; ref?: string }): string | null {
   if (!o) return null
   switch (o.kind) {
     case 'meeting':
-      return o.ref ? `rapat ${o.ref}` : 'rapat'
+      return o.ref ? `reunião ${o.ref}` : 'reunião'
     case 'cron':
       return o.ref ? `cron ${o.ref}` : 'cron'
     case 'agent':
@@ -63,15 +63,15 @@ function originLabel(o?: { kind: string; ref?: string }): string | null {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  todo: 'Belum dikerjakan',
-  triage: 'Perlu dispesifikasi',
-  ready: 'Siap diambil worker',
-  scheduled: 'Terjadwal',
-  running: 'Sedang dikerjakan',
-  review: 'Menunggu review',
-  blocked: 'Terhambat',
-  done: 'Selesai (klaim worker)',
-  archived: 'Diarsipkan',
+  todo: 'Ainda não começou',
+  triage: 'Precisa de especificação',
+  ready: 'Pronta para o worker',
+  scheduled: 'Agendada',
+  running: 'Em andamento',
+  review: 'Aguardando revisão',
+  blocked: 'Bloqueada',
+  done: 'Concluída (afirmação do worker)',
+  archived: 'Arquivada',
 }
 
 /**
@@ -119,7 +119,7 @@ export default function TaskPanel() {
       .then((res) => {
         if (!alive) return
         if (!res.ok) {
-          setErr(res.error || 'gagal memuat detail tugas')
+          setErr(res.error || 'não foi possível carregar o detalhe da tarefa')
           return
         }
         setRuns(res.data?.runs || [])
@@ -144,7 +144,7 @@ export default function TaskPanel() {
       .then((res) => {
         if (!alive) return
         if (!res.ok || !res.data || !Array.isArray(res.data.items)) {
-          setEvErr(res.error || 'gagal membaca bukti')
+          setEvErr(res.error || 'não foi possível ler as evidências')
           return
         }
         setEvidence(res.data)
@@ -168,7 +168,7 @@ export default function TaskPanel() {
       .then((res) => {
         if (!alive) return
         if (!res.ok || !res.data || typeof res.data.verdict !== 'string') {
-          setVfErr(res.error || 'gagal membaca verifikasi')
+          setVfErr(res.error || 'não foi possível ler a verificação')
           return
         }
         setVerify(res.data)
@@ -213,8 +213,8 @@ export default function TaskPanel() {
           body: JSON.stringify({ action, ...extra }),
         },
       )
-      if (!res.ok) throw new Error(res.error || 'aksi gagal')
-      setNote(res.data?.note || (action === 'set-model' ? 'Model disimpan.' : 'Selesai.'))
+      if (!res.ok) throw new Error(res.error || 'a ação falhou')
+      setNote(res.data?.note || (action === 'set-model' ? 'Modelo salvo.' : 'Concluído.'))
       await load()
       const fresh = await fetchJson<{ runs?: RunInfo[]; log?: string; task?: Task }>(
         `/api/hermes/tasks/${taskId}`,
@@ -238,19 +238,19 @@ export default function TaskPanel() {
   return (
     <aside className="vp-panel left-0">
       <header className="vp-panel-head">
-        <h2>Detail tugas</h2>
+        <h2>Detalhe da tarefa</h2>
         <button className="vp-x" onClick={() => openTask(null)} aria-label="Tutup">
           ×
         </button>
       </header>
 
       <div className="vp-pad flex flex-col gap-3">
-        {!task && <div className="vp-muted">Tugas {taskId} tidak ada di board aktif.</div>}
+        {!task && <div className="vp-muted">A tarefa {taskId} não está no quadro ativo.</div>}
 
         {task && (
           <>
             <div className="vp-kv">
-              <span>judul</span>
+              <span>título</span>
               <b>{task.title}</b>
             </div>
             <div className="vp-kv">
@@ -258,26 +258,26 @@ export default function TaskPanel() {
               <b>{STATUS_LABEL[task.status] || task.status}</b>
             </div>
             <div className="vp-kv">
-              <span>penanggung</span>
+              <span>responsável</span>
               <b>{task.assignee || '—'}{agent ? ` (${agent.role})` : ''}</b>
             </div>
             <div className="vp-kv">
-              <span>prioritas</span>
+              <span>prioridade</span>
               <b>{task.priority}</b>
             </div>
             <div className="vp-kv">
-              <span>model worker</span>
-              <b>{task.model || 'bawaan profil'}</b>
+              <span>modelo do worker</span>
+              <b>{task.model || 'padrão do perfil'}</b>
             </div>
             {task.updatedAt && (
               <div className="vp-kv">
-                <span>diubah</span>
-                <b>{new Date(task.updatedAt).toLocaleString('id-ID')}</b>
+                <span>alterado</span>
+                <b>{new Date(task.updatedAt).toLocaleString('pt-BR')}</b>
               </div>
             )}
             {originLabel(task.origin) && (
               <div className="vp-kv">
-                <span>asal</span>
+                <span>origem</span>
                 <b>{originLabel(task.origin)}</b>
               </div>
             )}
@@ -288,7 +288,7 @@ export default function TaskPanel() {
                 "menunggu prasyarat" without the ids is unactionable. */}
             {!!task.parents?.length && (
               <>
-                <div className="vp-sub">PRASYARAT ({task.parents.length})</div>
+                <div className="vp-sub">PRÉ-REQUISITOS ({task.parents.length})</div>
                 <div className="flex flex-col gap-1">
                   {task.parents.map((id) => {
                     const parent = tasks.find((t) => t.id === id)
@@ -299,17 +299,17 @@ export default function TaskPanel() {
                         key={id}
                         className="vp-run text-left"
                         onClick={() => openTask(id)}
-                        title="Buka tugas ini"
+                        title="Abrir esta tarefa"
                       >
-                        <b className={clear ? '' : 'vp-warn'}>{clear ? 'selesai' : STATUS_LABEL[state || ''] || state || 'tidak ada di board'}</b>
+                        <b className={clear ? '' : 'vp-warn'}>{clear ? 'concluída' : STATUS_LABEL[state || ''] || state || 'não está no quadro'}</b>
                         <span className="vp-muted"> · {parent?.title || id}</span>
                       </button>
                     )
                   })}
                 </div>
                 <div className="vp-muted">
-                  Tugas ini baru boleh jalan setelah semua prasyarat di atas selesai. Tombol
-                  Jalankan pada tugas ini tidak akan men-spawn worker selama masih ada yang belum selesai.
+                  Esta tarefa só pode rodar depois que todos os pré-requisitos acima estiverem concluídos. O botão
+                  Executar não inicia o worker enquanto algum ainda estiver pendente.
                 </div>
               </>
             )}
@@ -318,31 +318,31 @@ export default function TaskPanel() {
                 workers lives in the gateway. Without this button a task just sits
                 there whenever the gateway is down. It lifts a parked task first,
                 so one click covers blocked/scheduled too. */}
-            <div className="vp-sub">JALANKAN</div>
+            <div className="vp-sub">EXECUTAR</div>
             <div className="flex gap-2">
               <button
                 className="vp-btn"
                 disabled={busy || task.status === 'running' || task.status === 'review'}
                 onClick={() => act('run')}
-                title="Buka blokir bila perlu, lalu suruh dispatcher Hermes mengeksekusi tugas ini"
+                title="Desbloqueia se precisar e pede ao dispatcher do Hermes para executar esta tarefa"
               >
-                {busy ? '…' : 'Jalankan'}
+                {busy ? '…' : 'Executar'}
               </button>
             </div>
             {blocked && (
               <div className="vp-muted">
-                Status <b>{task.status}</b>: tombol Jalankan otomatis membuka blokir dulu.
+                Status <b>{task.status}</b>: o botão Executar desbloqueia antes, automaticamente.
               </div>
             )}
 
-            <div className="vp-sub">MODEL AGENT UNTUK TUGAS INI</div>
+            <div className="vp-sub">MODELO DO AGENTE PARA ESTA TAREFA</div>
             <ModelPicker
               value={pick}
               onChange={setPick}
               models={models}
-              emptyLabel={`bawaan profil${agent ? ` (${agent.name})` : ''}`}
+              emptyLabel={`padrão do perfil${agent ? ` (${agent.name})` : ''}`}
               disabled={busy}
-              title="Berlaku pada spawn worker berikutnya"
+              title="Vale no próximo spawn do worker"
             />
             <div className="flex gap-2">
               <button
@@ -352,88 +352,88 @@ export default function TaskPanel() {
                   const hit = models.find((m) => m.model === pick)
                   void act('set-model', pick ? { model: pick, provider: hit?.provider } : { model: null })
                 }}
-                title="Berlaku pada spawn worker berikutnya"
+                title="Vale no próximo spawn do worker"
               >
-                Simpan model
+                Salvar modelo
               </button>
             </div>
             {note && <div className="vp-note">{note}</div>}
 
-            {task.body && <Collapsible label="Uraian" text={task.body} />}
+            {task.body && <Collapsible label="Descrição" text={task.body} />}
 
             {/* Klaim worker ≠ terverifikasi. "Selesai" hanya berarti worker MENYATAKAN
                 selesai; terverifikasi berarti ada jejak review_requested → completed dari
                 tangan kedua yang independen. Basi/gagal dibaca = dikatakan apa adanya. */}
             <div className="vp-sub">VERIFIKASI</div>
-            {vfBusy && <div className="vp-muted">membaca verifikasi…</div>}
-            {vfErr && <div className="vp-err">gagal membaca verifikasi: {vfErr}</div>}
+            {vfBusy && <div className="vp-muted">lendo a verificação…</div>}
+            {vfErr && <div className="vp-err">não foi possível ler a verificação: {vfErr}</div>}
             {verify && (
               <>
                 <div className="vp-kv">
                   <span>status</span>
                   {verify.verdict === 'verified' ? (
                     <b>
-                      <span className="vp-chip">terverifikasi</span>
-                      {verify.reviewer && <span className="vp-muted"> · oleh {verify.reviewer}</span>}
+                      <span className="vp-chip">verificada</span>
+                      {verify.reviewer && <span className="vp-muted"> · por {verify.reviewer}</span>}
                     </b>
                   ) : verify.verdict === 'claim' ? (
                     <b>
-                      <span className="vp-chip vp-chip-warn">klaim</span>
-                      <span className="vp-muted"> · belum lewat review</span>
+                      <span className="vp-chip vp-chip-warn">afirmação</span>
+                      <span className="vp-muted"> · ainda sem revisão</span>
                     </b>
                   ) : task?.status === 'review' ? (
-                    <b className="vp-muted">menunggu review{verify.reviewer ? ` oleh ${verify.reviewer}` : ''}</b>
+                    <b className="vp-muted">aguardando revisão{verify.reviewer ? ` por ${verify.reviewer}` : ''}</b>
                   ) : (
-                    <b className="vp-muted">belum selesai — belum dinilai</b>
+                    <b className="vp-muted">ainda não concluída — ainda não avaliada</b>
                   )}
                 </div>
                 {verify.verdict === 'claim' && <div className="vp-warn">{verify.why}</div>}
                 {verify.verdict === 'verified' && verify.verifiedAt != null && (
                   <div className="vp-muted">
-                    disahkan {new Date(verify.verifiedAt * 1000).toLocaleString('id-ID')}
-                    {verify.implementer ? ` · dikerjakan ${verify.implementer}` : ''}
+                    homologada em {new Date(verify.verifiedAt * 1000).toLocaleString('pt-BR')}
+                    {verify.implementer ? ` · feita por ${verify.implementer}` : ''}
                   </div>
                 )}
                 {verify.verdict === 'open' && verify.requestedAt != null && (
                   <div className="vp-muted">
-                    diserahkan {new Date(verify.requestedAt * 1000).toLocaleString('id-ID')}
-                    {verify.implementer ? ` oleh ${verify.implementer}` : ''}
+                    entregue em {new Date(verify.requestedAt * 1000).toLocaleString('pt-BR')}
+                    {verify.implementer ? ` por ${verify.implementer}` : ''}
                   </div>
                 )}
                 <div className="vp-muted">
-                  dibaca {age(Math.max(0, Math.round((Date.now() - Date.parse(verify.readAt)) / 1000)))} lalu
+                  lida há {age(Math.max(0, Math.round((Date.now() - Date.parse(verify.readAt)) / 1000)))}
                 </div>
               </>
             )}
 
             {/* "Selesai" hanya klaim worker. Yang bisa diperiksa: ringkasan, run (outcome +
                 metadata), lampiran, log. Done tanpa satu pun = TANPA BUKTI, tidak pernah hijau. */}
-            <div className="vp-sub">BUKTI HASIL</div>
-            {evBusy && <div className="vp-muted">membaca bukti…</div>}
-            {evErr && <div className="vp-err">gagal membaca bukti: {evErr}</div>}
+            <div className="vp-sub">EVIDÊNCIAS</div>
+            {evBusy && <div className="vp-muted">lendo as evidências…</div>}
+            {evErr && <div className="vp-err">não foi possível ler as evidências: {evErr}</div>}
             {evidence && (
               <>
                 <div className="vp-kv">
-                  <span>penilaian</span>
+                  <span>avaliação</span>
                   {evidence.verdict === 'proven' ? (
                     <b>
-                      <span className="vp-chip">terbukti</span>
+                      <span className="vp-chip">comprovada</span>
                       {evidence.completedAgeSeconds != null && (
-                        <span className="vp-muted"> · selesai {age(evidence.completedAgeSeconds)} lalu</span>
+                        <span className="vp-muted"> · concluída há {age(evidence.completedAgeSeconds)}</span>
                       )}
                     </b>
                   ) : evidence.verdict === 'unproven' ? (
                     <b>
-                      <span className="vp-chip vp-chip-warn">TANPA BUKTI</span>
+                      <span className="vp-chip vp-chip-warn">SEM EVIDÊNCIA</span>
                     </b>
                   ) : (
-                    <b className="vp-muted">belum selesai — belum dinilai</b>
+                    <b className="vp-muted">ainda não concluída — ainda não avaliada</b>
                   )}
                 </div>
                 {evidence.verdict === 'unproven' && (
                   <div className="vp-warn">
-                    Ditandai selesai, tapi tidak ada ringkasan, run bermetadata, log, maupun lampiran
-                    yang bisa diperiksa.
+                    Marcada como concluída, mas não há resumo, execução com metadados, log nem anexo
+                    que dê para conferir.
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
@@ -444,28 +444,28 @@ export default function TaskPanel() {
                     ))}
                   {evidence.items.some((it) => it.kind === 'attachment') && (
                     <div className="vp-run">
-                      <b>lampiran</b>
+                      <b>anexos</b>
                       {evidence.items
                         .filter((it) => it.kind === 'attachment')
                         .map((it, i) => (
                           <div key={i} className="vp-muted">{it.label}</div>
                         ))}
-                      <div className="vp-muted">CLI hanya mendaftar lampiran; isinya tidak bisa dibuka dari sini.</div>
+                      <div className="vp-muted">A CLI só lista os anexos; o conteúdo não abre daqui.</div>
                     </div>
                   )}
                   {evidence.items.some((it) => it.kind === 'log') && (
-                    <div className="vp-muted">log worker tersedia — lihat “Log worker” di bawah.</div>
+                    <div className="vp-muted">há log do worker — veja “Log do worker” abaixo.</div>
                   )}
-                  {!evidence.items.length && <div className="vp-muted">tidak ada bukti dari keempat sumber</div>}
+                  {!evidence.items.length && <div className="vp-muted">não há evidência nas quatro fontes</div>}
                 </div>
                 <div className="vp-muted">
-                  dibaca {age(Math.max(0, Math.round((Date.now() - Date.parse(evidence.readAt)) / 1000)))} lalu
+                  lida há {age(Math.max(0, Math.round((Date.now() - Date.parse(evidence.readAt)) / 1000)))}
                 </div>
               </>
             )}
 
-            <div className="vp-sub">RIWAYAT RUN ({runs.length})</div>
-            {loading && <div className="vp-muted">memuat…</div>}
+            <div className="vp-sub">HISTÓRICO DE EXECUÇÕES ({runs.length})</div>
+            {loading && <div className="vp-muted">carregando…</div>}
             {err && <div className="vp-err">{err}</div>}
             <div className="flex flex-col gap-2">
               {runs
@@ -480,14 +480,14 @@ export default function TaskPanel() {
                     {r.error && <div className="vp-err">{r.error}</div>}
                   </div>
                 ))}
-              {!loading && !runs.length && <div className="vp-muted">belum ada run</div>}
+              {!loading && !runs.length && <div className="vp-muted">ainda não há execuções</div>}
             </div>
 
             <Collapsible
-              label="Log worker"
+              label="Log do worker"
               text={log}
               count={log.trim() ? log.trim().split('\n').length : undefined}
-              empty="belum ada log"
+              empty="ainda não há log"
             />
           </>
         )}

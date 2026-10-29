@@ -185,18 +185,18 @@ export function originVerdict(
       fix: 'panggil dari browser biasa (bukan curl tanpa header)',
     }
   }
-  if (origin.host !== host.host) {
+  if (origin.protocol !== 'http:' && origin.protocol !== 'https:') {
     return {
       status: 'fail',
-      detail: `Origin "${origin.host}" tidak sama dengan Host "${host.host}" — tulisan akan dijawab 403`,
-      fix: `buka kantor lewat alamat yang sama dengan Origin, atau samakan keduanya`,
+      detail: `esquema da Origin "${origin.protocol}" não é http nem https`,
+      fix: 'abra o painel por http ou https no host listado em ALLOWED_ORIGINS',
     }
   }
-  if (origin.protocol !== 'http:') {
+  if (origin.hostname.toLowerCase() !== host.hostname.toLowerCase()) {
     return {
       status: 'fail',
-      detail: `skema Origin "${origin.protocol}" bukan http — penjaga tulis hanya menerima http same-origin`,
-      fix: 'buka kantor lewat http:// (atau perbarui penjaga bila sudah https)',
+      detail: `Origin "${origin.hostname}" não é o mesmo host "${host.hostname}" — a escrita responde 403`,
+      fix: 'abra o escritório pelo mesmo endereço enviado no header Host',
     }
   }
   const allowed = allowedRaw

@@ -115,7 +115,7 @@ export default function MeetingPanel({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, participants: picked, moderator, mode: meetingMode }),
       })
-      if (!res.ok) throw new Error(res.error || 'gagal memulai rapat')
+      if (!res.ok) throw new Error(res.error || 'não foi possível iniciar a reunião')
       await refresh()
       setTopic('')
       setPicked([])
@@ -138,7 +138,7 @@ export default function MeetingPanel({
         `/api/hermes/meeting?id=${encodeURIComponent(id)}`,
         { cache: 'no-store' },
       )
-      if (!res.ok || !res.data) throw new Error(res.error || 'gagal membuka transkrip')
+      if (!res.ok || !res.data) throw new Error(res.error || 'não foi possível abrir a transcrição')
       setArchive({ id: res.data.id, body: res.data.body })
     } catch (e) {
       setErr((e as Error).message)
@@ -171,7 +171,7 @@ export default function MeetingPanel({
           body: JSON.stringify({ id: meeting.id }),
         },
       )
-      if (!res.ok) throw new Error(res.error || 'gagal membatalkan rapat')
+      if (!res.ok) throw new Error(res.error || 'não foi possível cancelar a reunião')
       await refresh()
     } catch (e) {
       setErr((e as Error).message)
@@ -219,12 +219,12 @@ export default function MeetingPanel({
   return (
     <FullPanel
       onClose={onClose}
-      label="Ruang rapat"
-      title={screen === 'new' ? 'Rapat baru' : 'Ruang rapat'}
+      label="Sala de reunião"
+      title={screen === 'new' ? 'Nova reunião' : 'Sala de reunião'}
       actions={
         screen === 'new' && (
           <button className="vp-chip-btn" onClick={() => setScreen('list')}>
-            ← Kembali
+            ← Voltar
           </button>
         )
       }
@@ -237,16 +237,16 @@ export default function MeetingPanel({
           /* ------------------------------------------------ opened card ---- */
           <>
             <button className="vp-chip-btn" onClick={closeCard}>
-              ← Daftar rapat
+              ← Lista de reuniões
             </button>
 
             {opened.kind === 'archive' ? (
               archBusy || !archive ? (
-                <div className="vp-muted">memuat transkrip…</div>
+                <div className="vp-muted">carregando a transcrição…</div>
               ) : (
                 <>
                   <Collapsible
-                    label={`Transkrip · ${archive.id}`}
+                    label={`Transcrição · ${archive.id}`}
                     text={archive.body}
                     defaultOpen
                   />
@@ -254,28 +254,28 @@ export default function MeetingPanel({
                     className="vp-btn vp-btn-ghost"
                     onClick={() => download(`rapat-${archive.id}.md`, archive.body)}
                   >
-                    Unduh
+                    Baixar
                   </button>
 
                   {itemsBusy ? (
-                    <div className="vp-muted">membaca tindak lanjut…</div>
+                    <div className="vp-muted">lendo os encaminhamentos…</div>
                   ) : (
                     <ActionItems
                       candidates={items}
                       roster={roster}
                       origin={{ kind: 'meeting', ref: archive.id }}
-                      label="TINDAK LANJUT → TUGAS"
+                      label="ENCAMINHAMENTOS → TAREFAS"
                     />
                   )}
                 </>
               )
             ) : !meeting ? (
-              <div className="vp-muted">rapat ini sudah tidak ada di memori</div>
+              <div className="vp-muted">esta reunião não está mais na memória</div>
             ) : (
               <>
                 <div className="vp-kv">
-                  <span>topik</span>
-                  <b>{meeting.topic || '(tanpa topik)'}</b>
+                  <span>tópico</span>
+                  <b>{meeting.topic || '(sem tópico)'}</b>
                 </div>
                 <div className="vp-kv">
                   <span>status</span>
@@ -288,16 +288,16 @@ export default function MeetingPanel({
                   <span>mode</span>
                   <b>
                     {meeting.mode === 'a2a'
-                      ? 'A2A — pernyataan dari agent nyata via A2A'
-                      : 'simulasi — yang bicara LLM gateway, BUKAN agent'}
+                      ? 'A2A — falas de agentes reais via A2A'
+                      : 'simulação — quem fala é o LLM do gateway, NÃO é um agente'}
                   </b>
                 </div>
                 <div className="vp-kv">
-                  <span>peserta</span>
+                  <span>participantes</span>
                   <b>{meeting.participants.join(', ') || '—'}</b>
                 </div>
                 <div className="vp-kv">
-                  <span>giliran</span>
+                  <span>turno</span>
                   <b>{meeting.currentSpeaker || '—'}</b>
                 </div>
 
@@ -307,15 +307,15 @@ export default function MeetingPanel({
                     disabled={cancelBusy}
                     onClick={cancel}
                   >
-                    {cancelBusy ? 'Membatalkan…' : 'Batalkan rapat'}
+                    {cancelBusy ? 'Cancelando…' : 'Cancelar reunião'}
                   </button>
                 )}
 
                 <Collapsible
-                  label="Transkrip"
+                  label="Transcrição"
                   count={meeting.turns.length}
                   defaultOpen={!!live}
-                  empty="belum ada giliran"
+                  empty="ainda não há turnos"
                 >
                   <div className="flex flex-col gap-2">
                     {meeting.turns.map((t, i) => (
@@ -340,23 +340,23 @@ export default function MeetingPanel({
 
                 {meeting.minutes && (
                   <>
-                    <Collapsible label="Notulen" text={meeting.minutes} defaultOpen />
+                    <Collapsible label="Ata" text={meeting.minutes} defaultOpen />
                     <button
                       className="vp-btn vp-btn-ghost"
-                      onClick={() => download(`notulen-${meeting.id}.md`, meeting.minutes)}
+                      onClick={() => download(`ata-${meeting.id}.md`, meeting.minutes)}
                     >
-                      Unduh notulen
+                      Baixar ata
                     </button>
 
                     {/* The cross-menu link: what this meeting asked for, as tasks. */}
                     {itemsBusy ? (
-                      <div className="vp-muted">membaca tindak lanjut…</div>
+                      <div className="vp-muted">lendo os encaminhamentos…</div>
                     ) : (
                       <ActionItems
                         candidates={items}
                         roster={roster}
                         origin={{ kind: 'meeting', ref: meeting.id }}
-                        label="TINDAK LANJUT → TUGAS"
+                        label="ENCAMINHAMENTOS → TAREFAS"
                       />
                     )}
                   </>
@@ -368,11 +368,11 @@ export default function MeetingPanel({
           /* ------------------------------------------------ the list ------ */
           <>
             <button className="vp-btn" onClick={() => setScreen('new')}>
-              + Buat rapat baru
+              + Nova reunião
             </button>
             {!configured && (
               <div className="vp-note">
-                LLM belum dikonfigurasi — rapat tidak bisa dimulai. Isi{' '}
+                O LLM ainda não está configurado — a reunião não pode começar. Preencha{' '}
                 <code>AI_BASE_URL</code> dan <code>AI_API_KEY</code> di{' '}
                 <code>.env.local</code>.
               </div>
@@ -381,30 +381,30 @@ export default function MeetingPanel({
             {meeting && (
               <>
                 <div className="vp-sub">
-                  RAPAT AKTIF {live && <span className="vp-live">●</span>}
+                  REUNIÃO ATIVA {live && <span className="vp-live">●</span>}
                 </div>
                 <Card
-                  title={meeting.topic || '(tanpa topik)'}
-                  meta={`${meeting.state} · ${meeting.participants.length} peserta · ${meeting.turns.length} giliran`}
+                  title={meeting.topic || '(sem tópico)'}
+                  meta={`${meeting.state} · ${meeting.participants.length} participantes · ${meeting.turns.length} turnos`}
                   highlight={!!live}
                   onClick={() => setOpened({ kind: 'live', id: meeting.id })}
                 />
               </>
             )}
 
-            <div className="vp-sub">RAPAT TERDAHULU ({history.length})</div>
+            <div className="vp-sub">REUNIÕES ANTERIORES ({history.length})</div>
             <div className="flex flex-col gap-2">
               {history.map((h) => (
                 <Card
                   key={h.id}
                   title={h.topic}
-                  meta={`${h.startedAt} · ${h.participants.length || '?'} peserta · ${h.turnCount} giliran`}
+                  meta={`${h.startedAt} · ${h.participants.length || '?'} participantes · ${h.turnCount} turnos`}
                   disabled={archBusy}
                   onClick={() => openArchive(h.id)}
                 />
               ))}
               {!history.length && (
-                <span className="vp-muted">belum ada rapat tersimpan</span>
+                <span className="vp-muted">ainda não há reuniões salvas</span>
               )}
             </div>
           </>
@@ -412,7 +412,7 @@ export default function MeetingPanel({
       ) : (
         /* ---------------------------------------------------- create form -- */
         <>
-          <label className="vp-sub">TOPIK</label>
+          <label className="vp-sub">TÓPICO</label>
           <textarea
             className="vp-input"
             rows={2}
@@ -421,7 +421,7 @@ export default function MeetingPanel({
             placeholder="Rencana rilis endpoint refund"
           />
 
-          <label className="vp-sub">PESERTA (2–4) · {agents.length} agent aktif</label>
+          <label className="vp-sub">PARTICIPANTES (2–4) · {agents.length} agentes ativos</label>
           <div className="flex flex-wrap gap-2">
             {agents.map((a) => (
               <button
@@ -433,10 +433,10 @@ export default function MeetingPanel({
                 <i className="vp-chip-role">{a.status}</i>
               </button>
             ))}
-            {!agents.length && <span className="vp-muted">belum ada agent aktif</span>}
+            {!agents.length && <span className="vp-muted">ainda não há agentes ativos</span>}
           </div>
 
-          <label className="vp-sub">PEMBAWA ACARA</label>
+          <label className="vp-sub">MEDIADOR</label>
           <select
             className="vp-input"
             value={moderator}
@@ -449,7 +449,7 @@ export default function MeetingPanel({
             ))}
           </select>
 
-          <label className="vp-sub">MODE RAPAT</label>
+          <label className="vp-sub">MODO DA REUNIÃO</label>
           <div className="flex flex-col gap-2">
             <label className="vp-kv">
               <input
@@ -459,8 +459,8 @@ export default function MeetingPanel({
                 onChange={() => setMeetingMode('simulasi')}
               />
               <span>
-                <b>Simulasi</b> — yang bicara LLM gateway, <b>bukan</b> agent. Perilaku lama,
-                labelnya jujur.
+                <b>Simulação</b> — quem fala é o LLM do gateway, <b>não</b> o agente. É o
+                comportamento antigo, com o rótulo honesto.
               </span>
             </label>
             <label className="vp-kv">
@@ -471,8 +471,8 @@ export default function MeetingPanel({
                 onChange={() => setMeetingMode('a2a')}
               />
               <span>
-                <b>A2A</b> — yang bicara agent nyata via protokol A2A (butuh toggle A2A tiap
-                peserta + restart gateway setelah perubahan).
+                <b>A2A</b> — quem fala é o agente real pelo protocolo A2A (é preciso ligar o
+                A2A de cada participante e reiniciar o gateway depois da mudança).
               </span>
             </label>
           </div>
@@ -482,9 +482,9 @@ export default function MeetingPanel({
             disabled={busy || !topic.trim() || picked.length < 2 || !configured}
             onClick={start}
           >
-            {busy ? 'Memulai…' : 'Mulai rapat'}
+            {busy ? 'Iniciando…' : 'Iniciar reunião'}
           </button>
-          {picked.length < 2 && <div className="vp-muted">pilih minimal 2 peserta</div>}
+          {picked.length < 2 && <div className="vp-muted">escolha pelo menos 2 participantes</div>}
         </>
       )}
     </FullPanel>

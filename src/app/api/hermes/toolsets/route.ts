@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,9 @@ const HERMES_BIN = process.env.HERMES_BIN || 'hermes'
  * A2A hanya bisa mengumumkan toolset nyata — bukan tag bebas. Tanpa endpoint
  * ini form harus mengarang daftarnya (dan cepat basi).
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   try {
     const { stdout } = await run(HERMES_BIN, ['tools', 'list', '--platform', 'cli'], {
       timeout: 20_000,

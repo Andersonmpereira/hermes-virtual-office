@@ -88,7 +88,7 @@ export default function DummySpawnDialog({
     if (done) return
     const clean = name.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
     if (!clean) {
-      setNote('Nama agent wajib diisi.')
+      setNote('O nome do agente é obrigatório.')
       return
     }
     setBusy(true)
@@ -116,7 +116,7 @@ export default function DummySpawnDialog({
         a2aError?: string | null
       }
       if (!res.ok) {
-        setNote(body?.error?.message || 'gagal membuat profile')
+        setNote(body?.error?.message || 'não foi possível criar o perfil')
         setBusy(false)
         return
       }
@@ -125,8 +125,8 @@ export default function DummySpawnDialog({
       // harus tahu dia belum terdaftar.
       if (body.a2aRegistered === false) {
         setNote(
-          `Profil "${clean}" dibuat, tapi GAGAL didaftarkan A2A (${body.a2aError ?? 'sebab tak terbaca'}) — ` +
-            `profilnya ada tapi belum terdaftar. Nyalakan manual lewat panel Agent.`,
+          `Perfil "${clean}" criado, mas FALHOU ao registrar no A2A (${body.a2aError ?? 'motivo ilegível'}) — ` +
+            `o perfil existe, mas ainda não está registrado. Ligue manualmente no painel Agentes.`,
         )
         setBusy(false)
         return
@@ -144,8 +144,8 @@ export default function DummySpawnDialog({
       await loadOffice()
       if (!claim.ok) {
         setNote(
-          `Profil "${clean}" dibuat dan terdaftar A2A, tapi badannya GAGAL pindah ke slot ` +
-            `(${claimBody?.error?.message ?? 'sebab tak terbaca'}) — segarkan halaman; agent masuk lewat pintu utama.`,
+          `Perfil "${clean}" criado e registrado no A2A, mas o corpo FALHOU ao ir para o lugar ` +
+            `(${claimBody?.error?.message ?? 'motivo ilegível'}) — atualize a página; o agente entra pela porta principal.`,
         )
         setBusy(false)
         return
@@ -154,10 +154,10 @@ export default function DummySpawnDialog({
       // profilnya sudah jadi.
       setDone(
         body.model
-          ? `Agent "${clean}" di-spawn dengan model ${body.model}.`
+          ? `Agente "${clean}" criado com o modelo ${body.model}.`
           : body.modelError
-            ? `Agent "${clean}" di-spawn, tapi model GAGAL diset (${body.modelError}) — sementara pakai bawaan Hermes. Ganti lewat panel Agent.`
-            : `Agent "${clean}" di-spawn dengan model bawaan Hermes.`,
+            ? `Agente "${clean}" criado, mas o modelo FALHOU (${body.modelError}) — por enquanto usa o padrão do Hermes. Troque no painel Agentes.`
+            : `Agente "${clean}" criado com o modelo padrão do Hermes.`,
       )
       // Pendaftaran A2A sukses (default NYALA) → pop up restart.
       if (body.a2aRegistered === true) setRestartFor(clean)
@@ -173,16 +173,16 @@ export default function DummySpawnDialog({
   return (
     <div className="vp-modal-backdrop" onClick={onClose}>
       <div className="vp-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Spawn agent di slot ini</h3>
+        <h3>Criar agente neste lugar</h3>
         <p className="vp-sub">
-          Slot ini masih avatar dummy (gratis, tidak pakai token). Kalau di-spawn, dia jadi agent
-          Hermes asli dengan SOUL.md dan mulai bisa mengerjakan tugas — dan mulai pakai token.
+          Este lugar ainda é um avatar decorativo (grátis, não gasta token). Se criar o agente, ele vira um agente
+          Hermes de verdade, com SOUL.md, e passa a poder executar tarefas — e a gastar token.
         </p>
         <p className="vp-note">
-          Otomatis terdaftar A2A; berlaku setelah gateway restart. Role slot ini: {roleForSlot(avatarId, division)}.
+          Registrado automaticamente no A2A; vale depois de reiniciar o gateway. Papel deste lugar: {roleForSlot(avatarId, division)}.
         </p>
         <label className="vp-field">
-          <span>Nama agent</span>
+          <span>Nome do agente</span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -201,25 +201,25 @@ export default function DummySpawnDialog({
             onChange={setModel}
             models={models}
             disabled={busy || !!done}
-            emptyLabel="bawaan Hermes"
-            title="Model untuk agent ini (kosong = bawaan Hermes)"
+            emptyLabel="padrão do Hermes"
+            title="Modelo deste agente (vazio = padrão do Hermes)"
           />
         </label>
-        <p className="vp-muted">Divisi: {DIVISION_LABEL[division]}</p>
+        <p className="vp-muted">Divisão: {DIVISION_LABEL[division]}</p>
         {note && <p className="vp-error">{note}</p>}
         {done && <div className="vp-ok">{done}</div>}
         <div className="vp-modal-actions">
           {done ? (
             <button className="vp-btn primary" onClick={onClose} autoFocus>
-              Tutup
+              Fechar
             </button>
           ) : (
             <>
               <button className="vp-btn" onClick={onClose} disabled={busy}>
-                Batal
+                Cancelar
               </button>
               <button className="vp-btn primary" onClick={() => void spawn()} disabled={busy}>
-                {busy ? 'Membuat…' : 'Spawn agent'}
+                {busy ? 'Criando…' : 'Criar agente'}
               </button>
             </>
           )}

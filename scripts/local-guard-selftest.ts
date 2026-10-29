@@ -21,7 +21,7 @@ const check = (label: string, got: boolean, want: boolean) => {
 // `ALLOWED_ORIGINS` is read at call time, so the public-IP cases only pass when it
 // is configured. The test asserts the CONFIGURED behaviour, because an unconfigured
 // deploy is exactly the broken state we are guarding against.
-process.env.ALLOWED_ORIGINS = '203.0.113.10:3300,office.example.com'
+process.env.ALLOWED_ORIGINS = '203.0.113.10:3300,office.example.com,agents.example.com'
 
 console.log('=== HARUS DITERIMA (kalau tidak, tombol mati) ===')
 const valid: [string, string][] = [
@@ -35,6 +35,10 @@ const valid: [string, string][] = [
   // a named host from the list, with and without a port
   ['office.example.com:3300', 'http://office.example.com:3300'],
   ['office.example.com', 'http://office.example.com'],
+  // HTTPS no mesmo host confiável (EasyPanel termina TLS na frente)
+  ['localhost:3000', 'https://localhost:3000'],
+  ['203.0.113.10:3300', 'https://203.0.113.10:3300'],
+  ['agents.example.com:443', 'https://agents.example.com'],
 ]
 for (const [host, origin] of valid) {
   check(`${origin}`, localOriginAllowed(host, origin), true)
@@ -48,9 +52,8 @@ const invalid: [string | null, string | null][] = [
   // a host we do not trust, even though host and origin agree
   ['office.example:3000', 'http://office.example:3000'],
   ['198.51.100.7:3300', 'http://198.51.100.7:3300'],
-  // scheme mismatch
-  ['localhost:3000', 'https://localhost:3000'],
-  ['203.0.113.10:3300', 'https://203.0.113.10:3300'],
+  ['evil.test', 'https://evil.test'],
+  ['203.0.113.10:3300', 'https://evil.test'],
   // missing headers (curl, a cross-site form post, a server-to-server call)
   ['localhost:3000', null],
   [null, 'http://localhost:3000'],

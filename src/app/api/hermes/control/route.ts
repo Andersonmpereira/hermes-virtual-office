@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { assertLocalWriteRequest } from '@/lib/local-guard'
+import { requireSession } from '@/lib/auth/require-session'
 import {
   ACTION_EFFECT,
   ESTOP_PATH,
@@ -34,7 +35,9 @@ export const dynamic = 'force-dynamic'
  *   3. Balasannya menyebut APA YANG TERJADI, bukan cuma "ok". Aksi yang tidak bisa dilaporkan
  *      hasilnya akan ditekan lagi oleh operator.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   return NextResponse.json({
     pause: readPause(),
     estopPath: ESTOP_PATH,
@@ -48,6 +51,8 @@ export async function GET() {
 const KINDS: ActionKind[] = ['pauseAll', 'resumeAll', 'unblock', 'promote', 'release', 'setFallback']
 
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   // Sama seperti semua tulis lain di proyek ini: hanya dari host ini. Tombol yang menghentikan
   // kerja tidak boleh bisa ditekan dari jaringan luar.
   const guard = assertLocalWriteRequest(req)

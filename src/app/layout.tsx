@@ -3,8 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Hermes Virtual Office',
-  description:
-    'An open-source 3D virtual workspace and meeting simulator for autonomous AI agents.',
+  description: 'Escritório virtual 3D para acompanhar e operar agentes autônomos.',
 }
 
 /**
@@ -26,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body>{children}</body>
     </html>
   )

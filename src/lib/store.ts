@@ -83,7 +83,7 @@ export const useOffice = create<State>((set) => ({
 
   // Mulai dari TIDAK TAHU, bukan dari hijau. Sistem yang belum selesai membaca keadaannya
   // tidak boleh tampil sehat — itu kebohongan yang paling gampang terjadi.
-  health: { level: 'warn', reasons: ['belum membaca keadaan sistem'] },
+  health: { level: 'warn', reasons: ['ainda não leu o estado do sistema'] },
 
   work: { chatLive: [], cron: null, a2a: [] },
 
@@ -110,7 +110,7 @@ export const useOffice = create<State>((set) => ({
         cache: 'no-store',
       })
       if (!res.ok || !res.data?.health) {
-        set({ health: { level: 'bad', reasons: [res.error || 'tidak bisa membaca keadaan sistem'] } })
+        set({ health: { level: 'bad', reasons: [res.error || 'não foi possível ler o estado do sistema'] } })
         return
       }
       set({ health: res.data.health })
@@ -126,7 +126,7 @@ export const useOffice = create<State>((set) => ({
       cache: 'no-store',
     })
     if (!res.ok || !res.data) {
-      set({ error: res.error || 'gagal memuat papan', loading: false })
+      set({ error: res.error || 'não foi possível carregar o quadro', loading: false })
       return
     }
     set({ tasks: res.data.tasks || [], agents: res.data.agents || [], error: null, loading: false })

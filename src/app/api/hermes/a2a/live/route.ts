@@ -3,6 +3,7 @@ import { CHAT_LIVE_MS, type A2aPair } from '@/lib/office/duty'
 import { a2aLivePairs } from '@/lib/hermes/a2a-transcript'
 import { readA2aTranscript } from '@/lib/hermes/a2a-transcript-server'
 import { listAgents, listProfiles, listTasks } from '@/lib/hermes/kanban'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,9 @@ export const dynamic = 'force-dynamic'
 let memo: { at: number; pairs: A2aPair[] } | null = null
 const MEMO_MS = 20_000
 
-export async function GET() {
+export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   try {
     const now = Date.now()
     if (memo && now - memo.at < MEMO_MS) {

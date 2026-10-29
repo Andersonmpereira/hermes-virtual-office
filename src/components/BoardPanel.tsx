@@ -108,7 +108,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
           body: JSON.stringify({ action, taskId, reason: why, steer }),
         })
         const json = await res.json()
-        if (!res.ok) throw new Error(json?.error?.message || 'aksi gagal')
+        if (!res.ok) throw new Error(json?.error?.message || 'a ação falhou')
         // Yang dilaporkan adalah APA YANG TERJADI, bukan "ok". Aksi yang tidak bisa dilaporkan
         // hasilnya akan ditekan lagi oleh operator.
         setNotice(json.did || 'selesai')
@@ -135,12 +135,12 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
     <FullPanel
       variant="slate"
       onClose={onClose}
-      label="Papan"
+      label="Quadro"
       className="vp-board-wide"
       title={
         <h2 className="text-lg font-semibold">
-          Papan
-          {paused && <span className="ml-3 rounded bg-amber-900/60 px-2 py-0.5 text-xs text-amber-300">DIJEDA</span>}
+          Quadro
+          {paused && <span className="ml-3 rounded bg-amber-900/60 px-2 py-0.5 text-xs text-amber-300">PAUSADO</span>}
         </h2>
       }
       actions={
@@ -153,7 +153,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
           }}
           className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800"
         >
-          muat ulang
+          atualizar
         </button>
       }
     >
@@ -164,7 +164,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
 
       {err && (
         <div className="mb-4 rounded border border-red-800 bg-red-950/50 p-3 text-sm text-red-300">
-          Tidak bisa membaca papan: {err}
+          Não foi possível ler o quadro: {err}
         </div>
       )}
 
@@ -174,18 +174,18 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
 
       {paused && (
         <div className="mb-4 rounded border border-amber-800 bg-amber-950/40 p-3 text-xs">
-          <b className="text-amber-300">Seluruh kerja baru sedang dijeda.</b>
+          <b className="text-amber-300">Todo trabalho novo está pausado.</b>
           <div className="mt-1 text-amber-200/80">
-            {data?.pause?.reason || '(tanpa alasan)'}
-            {data?.pause?.engagedAt ? ` · sejak ${data.pause.engagedAt}` : ''}
+            {data?.pause?.reason || '(sem motivo)'}
+            {data?.pause?.engagedAt ? ` · desde ${data.pause.engagedAt}` : ''}
           </div>
           <div className="mt-1 text-amber-200/60">
-            Kerja yang sedang jalan tidak dibunuh — hanya kerja BARU yang tidak dimulai.
+            O que já está rodando não é interrompido — só trabalho NOVO deixa de começar.
           </div>
         </div>
       )}
 
-      {!data && !err && <div className="py-8 text-center text-sm text-slate-400">membaca…</div>}
+      {!data && !err && <div className="py-8 text-center text-sm text-slate-400">lendo…</div>}
 
       {data && (
         <div className="space-y-5">
@@ -199,7 +199,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                       autoFocus
                       value={reason}
                       onChange={(ev) => setReason(ev.target.value)}
-                      placeholder="alasan (wajib) — kenapa dijeda?"
+                      placeholder="motivo (obrigatório) — por que pausar?"
                       className="flex-1 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs"
                     />
                     <button
@@ -207,10 +207,10 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                       onClick={() => act('pauseAll', undefined, reason)}
                       className="rounded bg-red-700 px-3 py-1 text-xs font-semibold text-white disabled:opacity-40"
                     >
-                      Yakin?
+                      Confirmar?
                     </button>
                     <button onClick={() => setConfirming(null)} className="rounded border border-slate-600 px-2 py-1 text-xs">
-                      batal
+                      cancelar
                     </button>
                   </>
                 ) : (
@@ -218,7 +218,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                     onClick={() => setConfirming('pauseAll')}
                     className="rounded border border-red-700 px-3 py-1 text-xs text-red-300 hover:bg-red-950/40"
                   >
-                    {actions.pauseAll?.label || 'Jeda semua'}
+                    {actions.pauseAll?.label || 'Pausar tudo'}
                   </button>
                 )}
               </>
@@ -228,7 +228,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                 disabled={busy}
                 className="rounded bg-emerald-700 px-3 py-1 text-xs font-semibold text-white disabled:opacity-40"
               >
-                {actions.resumeAll?.label || 'Lanjutkan'}
+                {actions.resumeAll?.label || 'Retomar'}
               </button>
             )}
           </section>
@@ -236,11 +236,11 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
           {/* ---------- menunggu manusia ---------- */}
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Menunggu kamu {b!.waitingOnHuman.length > 0 && <span className="text-red-400">({b!.waitingOnHuman.length})</span>}
+              Esperando você {b!.waitingOnHuman.length > 0 && <span className="text-red-400">({b!.waitingOnHuman.length})</span>}
             </h3>
             {b!.waitingOnHuman.length === 0 ? (
               <div className="rounded border border-slate-700 bg-slate-800/50 p-2 text-xs text-slate-400">
-                Tidak ada yang menunggu keputusanmu.
+                Nada está esperando a sua decisão.
               </div>
             ) : (
               <div className="space-y-2">
@@ -250,7 +250,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                       <div className="min-w-0">
                         <div className="truncate font-semibold">{t.title}</div>
                         <div className="mt-0.5 text-red-300/80">
-                          {t.reason.kind === 'needs_input' ? 'menunggu keputusan' : 'tidak bisa dikerjakan'}
+                          {t.reason.kind === 'needs_input' ? 'esperando decisão' : 'não dá para executar'}
                           {' — '}
                           {t.reason.reason}
                         </div>
@@ -264,15 +264,15 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                           setConfirming(t.id)
                           setReason(ev.target.value)
                         }}
-                        placeholder="alasan membuka blokir"
+                        placeholder="motivo do desbloqueio"
                         className="flex-1 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px]"
                       />
                       <button
                         disabled={busy || (confirming === t.id && reason.trim().length < 3)}
-                        onClick={() => act('unblock', t.id, reason || 'dibuka dari office')}
+                        onClick={() => act('unblock', t.id, reason || 'desbloqueada pelo escritório')}
                         className="rounded bg-slate-700 px-2 py-1 text-[11px] hover:bg-slate-600 disabled:opacity-40"
                       >
-                        buka blokir
+                        desbloquear
                       </button>
                     </div>
                   </div>
@@ -284,11 +284,11 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
           {/* ---------- macet ---------- */}
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Macet {b!.stuck.length > 0 && <span className="text-amber-400">({b!.stuck.length})</span>}
+              Travadas {b!.stuck.length > 0 && <span className="text-amber-400">({b!.stuck.length})</span>}
             </h3>
             {b!.stuck.length === 0 ? (
               <div className="rounded border border-slate-700 bg-slate-800/50 p-2 text-xs text-slate-400">
-                Semua task bergerak sesuai kolomnya.
+                Todas as tarefas seguem a coluna em que estão.
               </div>
             ) : (
               <div className="space-y-1">
@@ -304,9 +304,9 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                         disabled={busy}
                         onClick={() => act('release', t.id)}
                         className="rounded bg-slate-700 px-2 py-1 text-[11px] hover:bg-slate-600 disabled:opacity-40"
-                        title="Lepas worker yang memegang task. Pakai kalau worker-nya sudah mati."
+                        title="Solta o worker que segura a tarefa. Use se o worker já morreu."
                       >
-                        lepas worker
+                        soltar worker
                       </button>
                     </div>
                   </div>
@@ -319,7 +319,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
           {b!.looping.length > 0 && (
             <section>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Berputar di tempat ({b!.looping.length})
+                Em círculo ({b!.looping.length})
               </h3>
               <div className="space-y-1">
                 {b!.looping.map((t) => (
@@ -331,7 +331,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                       </span>
                     </div>
                     <div className="mt-0.5 text-slate-400">
-                      diblokir-dibuka-diblokir {t.reason.recurrences} kali: {t.reason.reason}
+                      bloqueada e reaberta {t.reason.recurrences} vezes: {t.reason.reason}
                     </div>
                   </div>
                 ))}
@@ -342,7 +342,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
           {/* ---------- arahkan ---------- */}
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Kirim arahan ke task yang sedang jalan
+              Enviar orientação para a tarefa em andamento
             </h3>
             {steerFor ? (
               <div className="flex items-center gap-2">
@@ -350,7 +350,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                   autoFocus
                   value={steerText}
                   onChange={(ev) => setSteerText(ev.target.value)}
-                  placeholder="arahan untuk worker — tidak menghentikannya"
+                  placeholder="orientação para o worker — não o interrompe"
                   className="flex-1 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs"
                 />
                 <button
@@ -358,16 +358,16 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                   onClick={() => act('unblock', steerFor, undefined, steerText)}
                   className="rounded bg-slate-700 px-3 py-1 text-xs hover:bg-slate-600 disabled:opacity-40"
                 >
-                  kirim
+                  enviar
                 </button>
                 <button onClick={() => setSteerFor(null)} className="rounded border border-slate-600 px-2 py-1 text-xs">
-                  batal
+                  cancelar
                 </button>
               </div>
             ) : (
               <div className="text-xs text-slate-400">
-                Papan ini tidak menghentikan worker untuk memberi arahan — arahan dikirim sebagai catatan
-                pada task, dan worker yang sedang jalan membacanya.
+                Este quadro não para o worker para orientar — a orientação vai como nota
+                na tarefa, e o worker que está rodando lê essa nota.
               </div>
             )}
           </section>
@@ -376,7 +376,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
           {audit.length > 0 && (
             <section>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Yang pernah ditekan
+                O que já foi acionado
               </h3>
               <div className="space-y-1">
                 {audit.slice(0, 8).map((a, i) => (
@@ -388,7 +388,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
                       </span>
                       <span className="shrink-0 text-slate-500">{a.at.slice(11, 19)}</span>
                     </div>
-                    {a.reason && <div className="mt-0.5 text-slate-400">alasan: {a.reason}</div>}
+                    {a.reason && <div className="mt-0.5 text-slate-400">motivo: {a.reason}</div>}
                     {a.result && (
                       <div className={a.ok === false ? 'mt-0.5 text-red-400' : 'mt-0.5 text-slate-500'}>
                         {a.result}
@@ -402,7 +402,7 @@ export default function BoardPanel({ open, onClose }: { open: boolean; onClose: 
 
           <div className="text-[11px] text-slate-500">
             {b!.total} task · {Object.entries(b!.byStatus).map(([k, v]) => `${k} ${v}`).join(' · ')}
-            {data.notRead > 0 && ` · ${data.notRead} task tidak dibaca detailnya (terlalu banyak)`}
+            {data.notRead > 0 && ` · ${data.notRead} tarefas sem detalhe lido (são muitas)`}
           </div>
         </div>
       )}

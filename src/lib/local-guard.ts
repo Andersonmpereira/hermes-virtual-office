@@ -22,9 +22,11 @@ import { NextResponse } from 'next/server'
  *      evil.example is not on the list.
  *
  * WHAT THIS DOES **NOT** DO: it does not authenticate anyone. A person who opens
- * the office URL in a browser IS same-origin, so they can write. On a public port
- * that means anyone who knows the URL can act. This guard stops cross-site
- * attacks, not visitors. Real protection needs a token — see docs/API-SPEC.md.
+ * the office URL in a browser IS same-origin, so they can write. Session auth
+ * lives in requireSession. This guard only stops cross-site writes.
+ *
+ * http and https are both accepted when the host matches and is trusted.
+ * An arbitrary public origin is still refused.
  */
 
 /** Loopback names, always trusted. */
@@ -50,6 +52,17 @@ function bareHost(host: string): string {
   return host.replace(/:\d+$/, '')
 }
 
+/**
+ * Porta explícita 443 no Host (proxy) equivale à porta omitida de um Origin https.
+ * O mesmo vale para http e a porta 80.
+ */
+function samePort(host: URL, origin: URL): boolean {
+  if (host.port === origin.port) return true
+  if (origin.protocol === 'https:' && origin.port === '' && host.port === '443') return true
+  if (origin.protocol === 'http:' && origin.port === '' && host.port === '80') return true
+  return false
+}
+
 function trustedHost(host: string): boolean {
   if (LOOPBACK.has(bareHost(host))) return true
   const bare = bareHost(host)
@@ -63,9 +76,9 @@ export function localOriginAllowed(hostHeader: string | null, originHeader: stri
     const host = new URL(`http://${hostHeader}`)
     const origin = new URL(originHeader)
     // 1. same-origin: the Origin names the host being requested
-    if (origin.host !== host.host) return false
-    // the office is served over plain http; an https origin is a different origin
-    if (origin.protocol !== 'http:') return false
+    if (origin.protocol !== 'http:' && origin.protocol !== 'https:') return false
+    if (origin.hostname.toLowerCase() !== host.hostname.toLowerCase()) return false
+    if (!samePort(host, origin)) return false
     // 2. and that host is one we trust
     return trustedHost(host.host)
   } catch {
@@ -84,8 +97,7 @@ export function assertLocalWriteRequest(req: Request): NextResponse | null {
       error: {
         code: 'forbidden_origin',
         message:
-          `origin "${origin ?? '(tidak ada)'}" tidak diizinkan menulis. ` +
-          `Tambahkan "${origin ?? host ?? 'host ini'}" ke ALLOWED_ORIGINS di .env.local, lalu restart.`,
+          'Origem não permitida para alterar dados. Abra o painel pelo endereço listado em ALLOWED_ORIGINS.',
         status: 403,
       },
     },

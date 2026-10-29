@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSession } from '@/lib/auth/require-session'
 import {
   commentOnTask,
   dispatchTask,
@@ -23,7 +24,9 @@ export const dynamic = 'force-dynamic'
  * 200 with an empty payload — a misspelled or deleted task looked like a real task
  * that simply had no runs. A 404 is the honest answer.
  */
-export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const { id } = await ctx.params
   try {
     const task = await getTask(id)
@@ -49,6 +52,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
  * outlives this request) and `promote` returns a blocked task to `ready`.
  */
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
   const { id } = await ctx.params

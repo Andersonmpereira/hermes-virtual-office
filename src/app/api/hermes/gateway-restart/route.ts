@@ -4,6 +4,7 @@ import { promisify } from 'node:util'
 import { assertLocalWriteRequest } from '@/lib/local-guard'
 import { decideRestart, type RunningReadout } from '@/lib/hermes/restart-guard'
 import { readRunningKanbanCards } from '@/lib/hermes/kanban'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +38,8 @@ const run = promisify(execFile)
  * bagian proyek publik.
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
 

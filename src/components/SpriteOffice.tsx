@@ -767,9 +767,9 @@ export default function SpriteOffice({ onSelect }: { onSelect: (name: string) =>
         ref={canvasRef}
         className="block pixel-office"
         role="img"
-        aria-label="Peta kantor isometrik: ruang rapat, area kerja, lounge, dan lobi sama seperti mode 3D. Klik karakter untuk memilih agent."
+        aria-label="Mapa isométrico do escritório: sala de reunião, área de trabalho, lounge e recepção, como no modo 3D. Clique no personagem para escolher o agente."
       />
-      <div className="sr-only" aria-label="Pilih agent">
+      <div className="sr-only" aria-label="Escolher agente">
         {agents.map((agent) => (
           <button key={agent.name} onClick={() => onSelect(agent.name)}>{agent.displayName}, {agent.status}</button>
         ))}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { VERIFICATION_BATCH_CAP } from '@/lib/hermes/verification'
 import { verificationMarks } from '@/lib/hermes/kanban'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,8 @@ export const dynamic = 'force-dynamic'
  * Maksimal VERIFICATION_BATCH_CAP id diperiksa; sisanya `unchecked` (netral, tidak dinilai).
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const body = await req.json().catch(() => ({}))
   const ids: unknown = body?.ids
   if (!Array.isArray(ids)) {

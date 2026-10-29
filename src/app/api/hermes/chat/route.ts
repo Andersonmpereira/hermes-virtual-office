@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { chatLiveAgents } from '@/lib/office/duty'
+import { requireSession } from '@/lib/auth/require-session'
 import {
   chatTurnsInFlight,
   getChatSession,
@@ -35,6 +36,8 @@ async function chatProfiles(): Promise<string[]> {
 }
 
 export async function GET(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const agent = req.nextUrl.searchParams.get('agent')
   try {
     // `?live=1` — siapa yang sedang diajak bicara, untuk kantor (agent pergi ke mejanya).
@@ -95,6 +98,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
   const body = await req.json().catch(() => null)
@@ -132,6 +137,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
   const agent = req.nextUrl.searchParams.get('agent')

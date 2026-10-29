@@ -32,13 +32,13 @@ export default function KanbanModal({ onClose }: { onClose: () => void }) {
       <div className="vp-kanban-modal" onClick={(e) => e.stopPropagation()}>
         <header className="vp-kanban-head">
           <div>
-            <h3>Papan Kanban</h3>
+            <h3>Quadro Kanban</h3>
             <p className="vp-sub">
-              {tasks.length} tugas · klik kartu untuk membuka detail
+              {tasks.length} tarefas · clique no card para abrir o detalhe
             </p>
           </div>
           <button className="vp-btn ml-auto" onClick={onClose}>
-            Tutup
+            Fechar
           </button>
         </header>
         <div className="vp-kanban-scroll">

@@ -19,12 +19,12 @@ import {
  */
 
 export const KANBAN_COLUMNS = [
-  { label: 'TODO', statuses: ['todo', 'triage', 'ready', 'scheduled'] },
-  { label: 'DIKERJAKAN', statuses: ['running'] },
-  { label: 'REVIEW', statuses: ['review'] },
-  { label: 'SELESAI', statuses: ['done'] },
-  { label: 'TERHAMBAT', statuses: ['blocked'] },
-  { label: 'ARSIP', statuses: ['archived'] },
+  { label: 'A FAZER', statuses: ['todo', 'triage', 'ready', 'scheduled'] },
+  { label: 'EM ANDAMENTO', statuses: ['running'] },
+  { label: 'REVISÃO', statuses: ['review'] },
+  { label: 'CONCLUÍDO', statuses: ['done'] },
+  { label: 'BLOQUEADO', statuses: ['blocked'] },
+  { label: 'ARQUIVO', statuses: ['archived'] },
 ]
 const KNOWN = KANBAN_COLUMNS.flatMap((column) => column.statuses)
 
@@ -59,7 +59,7 @@ export default function KanbanColumns({
     : tasks
   const columns = [
     ...KANBAN_COLUMNS.map((column) => ({ ...column, items: shown.filter((task) => column.statuses.includes(task.status)) })),
-    { label: 'STATUS LAIN', statuses: [], items: shown.filter((task) => !KNOWN.includes(task.status)) },
+    { label: 'OUTRO STATUS', statuses: [], items: shown.filter((task) => !KNOWN.includes(task.status)) },
   ]
 
   return (
@@ -135,7 +135,7 @@ function KanbanToolbar({
             {marks.error ? (
               <span className="vp-err">gagal membaca bukti: {marks.error}</span>
             ) : marksAge == null ? (
-              marks.busy ? 'membaca bukti…' : 'bukti belum dibaca'
+              marks.busy ? 'lendo evidências…' : 'evidências ainda não lidas'
             ) : (
               <>
                 bukti ringkas (ringkasan + run, tanpa log/lampiran) · dibaca {marksAge} dtk lalu
@@ -147,7 +147,7 @@ function KanbanToolbar({
             {vf.error ? (
               <span className="vp-err">gagal membaca verifikasi: {vf.error}</span>
             ) : vfAge == null ? (
-              vf.busy ? 'membaca verifikasi…' : 'verifikasi belum dibaca'
+              vf.busy ? 'lendo a verificação…' : 'verificação ainda não lida'
             ) : (
               <>
                 verifikasi (klaim vs review) · dibaca {vfAge} dtk lalu

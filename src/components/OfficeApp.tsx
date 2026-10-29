@@ -28,7 +28,7 @@ import type { AgentDivision } from '@/types/hermes'
  */
 const Scene3D = dynamic(() => import('./Scene3D'), {
   ssr: false,
-  loading: () => <div className="absolute inset-0 grid place-items-center vp-muted">memuat ruangan…</div>,
+  loading: () => <div className="absolute inset-0 grid place-items-center vp-muted">carregando a sala…</div>,
 })
 
 export default function OfficeApp() {
@@ -58,6 +58,11 @@ export default function OfficeApp() {
   const [spawnSlot, setSpawnSlot] = useState<{ avatarId: string; division: AgentDivision } | null>(null)
   const loadOffice = useOffice((s) => s.loadOffice)
 
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    window.location.assign('/login')
+  }
+
   useEffect(() => startPolling(), [])
 
   // Tinggi top bar TIDAK tetap: di layar sempit tombolnya pindah ke baris kedua, dan
@@ -84,7 +89,7 @@ export default function OfficeApp() {
     for (const t of tasks) {
       const prev = seen.current.get(t.id)
       if (prev && prev !== t.status && (t.status === 'review' || t.status === 'blocked')) {
-        new Notification(`Kanban · ${t.status}`, { body: t.title })
+        new Notification(`Quadro · ${t.status === 'review' ? 'revisão' : 'bloqueada'}`, { body: t.title })
       }
       seen.current.set(t.id, t.status)
     }
@@ -137,29 +142,32 @@ export default function OfficeApp() {
           <span className="vp-logo">Hermes Office</span>
           <span className={`vp-dot ${backendOnline ? 'ok' : 'bad'}`} />
           <span className="vp-muted vp-topbar-status">
-            {backendOnline ? `${agents.length} agent · ${running} jalan · ${pct}% rilis` : 'backend offline'}
+            {backendOnline ? `${agents.length} agentes · ${running} em execução · ${pct}% concluído` : 'servidor indisponível'}
           </span>
         </div>
 
         <nav className="vp-topbar-nav flex items-center gap-2" aria-label="Panel">
-          <button className="vp-btn vp-btn-ghost" onClick={() => setNewTaskOpen(true)}>+ Tugas</button>
+          <button className="vp-btn vp-btn-ghost" onClick={() => setNewTaskOpen(true)}>+ Tarefa</button>
           <button className="vp-btn vp-btn-ghost" onClick={() => setMeetOpen(true)}>
-            Ruang rapat{meeting && meeting.state === 'running' ? ' ●' : ''}
+            Reunião{meeting && meeting.state === 'running' ? ' ●' : ''}
           </button>
           <button className="vp-btn vp-btn-ghost" onClick={() => setAgentOpen(true)}>
-            Agent ({agents.length})
+            Agentes ({agents.length})
           </button>
           <button className="vp-btn vp-btn-ghost" onClick={() => setCronOpen(true)}>
             Cron
           </button>
           <button className="vp-btn vp-btn-ghost" onClick={() => setPanelOpen(true)}>
-            Papan
+            Quadro
           </button>
           <button className="vp-btn vp-btn-ghost" onClick={() => setSystemOpen(true)}>
-            Sistem
+            Sistema
           </button>
           <button className="vp-btn vp-btn-ghost" onClick={() => setChatOpen(true)}>
             Chat
+          </button>
+          <button className="vp-btn vp-btn-ghost" onClick={() => void logout()}>
+            Sair
           </button>
         </nav>
         {/* Saklar tampilan sengaja di luar <nav>: di HP baris tombol bisa digeser ke
@@ -182,9 +190,9 @@ export default function OfficeApp() {
               <b>{a.displayName}</b>
               <button className="vp-x" onClick={() => select(null)} aria-label="Tutup">×</button>
             </div>
-            <div className="vp-kv"><span>peran</span><b>{a.role}</b></div>
+            <div className="vp-kv"><span>função</span><b>{a.role}</b></div>
             <div className="vp-kv"><span>status</span><b>{a.status}</b></div>
-            <div className="vp-kv"><span>tugas</span><b>{t?.title || '—'}</b></div>
+            <div className="vp-kv"><span>tarefa</span><b>{t?.title || '—'}</b></div>
           </aside>
         )
       })()}

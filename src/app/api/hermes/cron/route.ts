@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { assertLocalWriteRequest } from '@/lib/local-guard'
 import { actOnJob, createJob, listJobs, listRuns, parseLimit, readJobList, type JobAction } from '@/lib/hermes/cron'
 import { cronPulse } from '@/lib/office/duty'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,8 @@ export const dynamic = 'force-dynamic'
  * confirmed click from an unconfirmed one. Documented in API-SPEC.md.
  */
 export async function GET(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const id = req.nextUrl.searchParams.get('id')
   const limit = Number(req.nextUrl.searchParams.get('limit') || 25)
   try {
@@ -64,6 +67,8 @@ export async function GET(req: NextRequest) {
 const ACTIONS: JobAction[] = ['pause', 'resume', 'run', 'remove']
 
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
   const body = await req.json().catch(() => ({}))

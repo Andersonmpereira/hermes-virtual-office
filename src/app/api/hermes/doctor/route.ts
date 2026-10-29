@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { runDoctor } from '@/lib/hermes/doctor'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,8 @@ export const dynamic = 'force-dynamic'
  * diteruskan supaya periksa origin menilai browser yang sebenarnya.
  */
 export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   try {
     const report = await runDoctor({
       host: req.headers.get('host'),

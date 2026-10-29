@@ -23,8 +23,8 @@ export default function ActionItems({
   candidates,
   origin,
   roster,
-  label = 'JADIKAN TUGAS',
-  empty = 'tidak ada item tindak lanjut',
+  label = 'VIRAR TAREFA',
+  empty = 'não há encaminhamentos',
   onDone,
 }: {
   candidates: Candidate[]
@@ -57,7 +57,7 @@ export default function ActionItems({
   async function create() {
     const chosen = rows.filter((r) => r.on && r.assignee)
     if (!chosen.length) {
-      setErr('pilih minimal satu item dan penanggungnya')
+      setErr('escolha pelo menos um item e o responsável')
       return
     }
     setBusy(true)
@@ -78,7 +78,7 @@ export default function ActionItems({
             assignee: c.assignee,
             // The deadline belongs in the body, not the title: a title is read in a
             // narrow card and "— 2026-09-30" crowds it out.
-            body: [c.due ? `Tenggat: ${c.due}` : '', c.body || ''].filter(Boolean).join('\n\n') || undefined,
+            body: [c.due ? `Prazo: ${c.due}` : '', c.body || ''].filter(Boolean).join('\n\n') || undefined,
           })),
         }),
       })
@@ -86,7 +86,7 @@ export default function ActionItems({
       // Partial success is a valid outcome, so only a reply with NO created tasks is
       // a failure — the route answers 502 in exactly that case.
       if (!d?.created?.length) {
-        throw new Error(res.error || d?.error?.message || 'tidak ada tugas yang dibuat')
+        throw new Error(res.error || d?.error?.message || 'nenhuma tarefa foi criada')
       }
       const n = d.created.length
       setNote(d.failed?.length ? `${n} tugas dibuat, ${d.failed.length} gagal` : `${n} tugas dibuat`)
@@ -152,16 +152,16 @@ export default function ActionItems({
                   )
                 }
               >
-                <option value="">— pilih penanggung —</option>
+                <option value="">— escolha o responsável —</option>
                 {roster.map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
                 ))}
               </select>
-              {r.due && <span className="vp-chip">tenggat {r.due}</span>}
+              {r.due && <span className="vp-chip">prazo {r.due}</span>}
               {r.owner && !r.suggested && (
-                <span className="vp-chip vp-chip-warn">sumber menulis “{r.owner}”</span>
+                <span className="vp-chip vp-chip-warn">a fonte escreveu “{r.owner}”</span>
               )}
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function ActionItems({
       </div>
 
       <button className="vp-btn" disabled={busy || !chosen} onClick={create}>
-        {busy ? 'Membuat…' : `Buat ${chosen} tugas`}
+        {busy ? 'Criando…' : `Criar ${chosen} tarefa${chosen === 1 ? '' : 's'}`}
       </button>
 
       {note && <div className="vp-ok">{note}</div>}

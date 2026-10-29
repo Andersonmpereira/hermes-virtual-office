@@ -100,14 +100,14 @@ const STALE_APPROVAL = 300
 
 const nfmt = (n: number) => n.toLocaleString('id-ID')
 const usd = (n: number) => `$${n.toFixed(n < 1 ? 4 : 2)}`
-const tok = (n: number) => (n >= 1e9 ? `${(n / 1e9).toFixed(2)} M` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} jt` : nfmt(n))
+const tok = (n: number) => (n >= 1e9 ? `${(n / 1e9).toFixed(2)} bi` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} mi` : nfmt(n))
 
 function age(sec: number | null): string {
   if (sec == null || sec < 0) return '—'
-  if (sec < 60) return `${sec} dtk`
-  if (sec < 3600) return `${Math.floor(sec / 60)} mnt`
-  if (sec < 86400) return `${Math.floor(sec / 3600)} jam`
-  return `${Math.floor(sec / 86400)} hari`
+  if (sec < 60) return `${sec} s`
+  if (sec < 3600) return `${Math.floor(sec / 60)} min`
+  if (sec < 86400) return `${Math.floor(sec / 3600)} h`
+  return `${Math.floor(sec / 86400)} d`
 }
 
 export default function SystemPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -131,7 +131,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
     try {
       const res = await fetch(`/api/hermes/observability?days=${days}`, { cache: 'no-store' })
       const json = await res.json()
-      if (!res.ok) throw new Error(json?.error?.message || 'gagal membaca keadaan sistem')
+      if (!res.ok) throw new Error(json?.error?.message || 'não foi possível ler o estado do sistema')
       setData(json)
       setErr(null)
     } catch (e) {
@@ -149,7 +149,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
     try {
       const res = await fetch('/api/hermes/approvals', { cache: 'no-store' })
       const json = await res.json()
-      if (!res.ok) throw new Error(json?.error?.message || 'gagal membaca persetujuan')
+      if (!res.ok) throw new Error(json?.error?.message || 'não foi possível ler as aprovações')
       setAppr(json)
       setApprErr(null)
     } catch (e) {
@@ -167,7 +167,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
     try {
       const res = await fetch('/api/hermes/agents', { cache: 'no-store' })
       const json = await res.json()
-      if (!res.ok) throw new Error(json?.error?.message || 'gagal membaca keadaan restart')
+      if (!res.ok) throw new Error(json?.error?.message || 'não foi possível ler o estado do restart')
       setNeedsGatewayRestart(json?.needsGatewayRestart ?? null)
     } catch {
       setNeedsGatewayRestart(null)
@@ -209,9 +209,9 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
             onChange={(ev) => setDays(Number(ev.target.value))}
             className="rounded border border-slate-600 bg-slate-800 px-2 py-1"
           >
-            <option value={1}>1 hari</option>
-            <option value={7}>7 hari</option>
-            <option value={30}>30 hari</option>
+            <option value={1}>1 dia</option>
+            <option value={7}>7 dias</option>
+            <option value={30}>30 dias</option>
             <option value={365}>semua</option>
           </select>
           <button
@@ -221,7 +221,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
               loadRestart()
             }}
             disabled={busy} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800">
-            {busy ? '...' : 'muat ulang'}
+            {busy ? '...' : 'atualizar'}
           </button>
         </>
       }
@@ -229,10 +229,10 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
 
       {err && (
         <div className="mb-4 rounded border border-red-800 bg-red-950/50 p-3 text-sm">
-          <b>Tidak bisa membaca keadaan sistem.</b>
+          <b>Não foi possível ler o estado do sistema.</b>
           <div className="mt-1 text-red-300">{err}</div>
           <div className="mt-1 text-xs text-red-400/80">
-            Angka lama sengaja TIDAK ditampilkan. Lebih baik tidak tahu daripada salah tahu.
+            Números antigos ficam de fora de propósito. É melhor não saber do que saber errado.
           </div>
         </div>
       )}
@@ -248,11 +248,11 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
           <div>
             restart gateway:{' '}
             {needsGatewayRestart === true ? (
-              <span className="text-amber-300">butuh — config lebih baru dari start gateway (served tersimpan, BELUM aktif)</span>
+              <span className="text-amber-300">precisa — a configuração é mais nova que a inicialização do gateway (served salvo, AINDA NÃO ativo)</span>
             ) : needsGatewayRestart === false ? (
-              <span className="text-emerald-300">tidak — served yang tersimpan sudah aktif</span>
+              <span className="text-emerald-300">não — o served salvo já está ativo</span>
             ) : (
-              <span className="text-slate-500">tak pasti — start gateway tak terbaca</span>
+              <span className="text-slate-500">incerto — a inicialização do gateway não foi lida</span>
             )}
           </div>
         </div>
@@ -262,20 +262,20 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
       {/* Bukti kenapa agent duduk di mejanya walau papan kosong. Cron ditulis sebagai KEBIJAKAN:
           Hermes tidak menyimpan pemilik cron, jadi panel tidak menyebut agent untuknya. */}
       <section className="mb-5">
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Kerja di kantor</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Trabalho no escritório</h3>
         <div className="space-y-1 rounded border border-slate-700 bg-slate-800/50 p-2 text-xs">
           <div>
-            chat hidup:{' '}
-            {work.chatLive.length ? <span className="font-mono">{work.chatLive.join(', ')}</span> : <span className="text-slate-500">tidak ada</span>}
+            chat ao vivo:{' '}
+            {work.chatLive.length ? <span className="font-mono">{work.chatLive.join(', ')}</span> : <span className="text-slate-500">nenhum</span>}
           </div>
           <div>
             {work.cron ? (
               <>
-                cron <span className="font-mono">{work.cron.name}</span> jalan {age(work.cron.agoSec)} lalu —
-                kebijakan: agent yang bebas kembali ke mejanya
+                cron <span className="font-mono">{work.cron.name}</span> rodou há {age(work.cron.agoSec)} —
+                política: o agente livre volta para a mesa
               </>
             ) : (
-              <span className="text-slate-500">tidak ada cron agent yang jalan dalam 2 menit terakhir</span>
+              <span className="text-slate-500">nenhum cron de agente rodou nos últimos 2 minutos</span>
             )}
           </div>
         </div>
@@ -284,34 +284,34 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
       {/* ---------- persetujuan ---------- */}
       <section className="mb-5">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Persetujuan
+          Aprovações
           {appr && (
             <span className={`ml-2 ${appr.pending.length > 0 ? 'text-red-400' : 'text-slate-500'}`}>
-              · {appr.pending.length} menunggu
+              · {appr.pending.length} aguardando
             </span>
           )}
         </h3>
         {apprErr ? (
           <div className="rounded border border-red-800 bg-red-950/50 p-2 text-xs">
-            <b>Tidak bisa membaca keadaan persetujuan.</b>
+            <b>Não foi possível ler o estado das aprovações.</b>
             <div className="mt-1 text-red-300">{apprErr}</div>
           </div>
         ) : !appr ? (
-          <div className="rounded border border-slate-700 bg-slate-800/50 p-2 text-xs text-slate-400">membaca…</div>
+          <div className="rounded border border-slate-700 bg-slate-800/50 p-2 text-xs text-slate-400">lendo…</div>
         ) : (
           <div className="space-y-2 text-xs">
             <div className="rounded border border-slate-700 bg-slate-800/50 p-2">
               {appr.policy.failure ? (
-                <span className="text-red-300">Kebijakan tidak terbaca: {appr.policy.failure}</span>
+                <span className="text-red-300">Política ilegível: {appr.policy.failure}</span>
               ) : (
                 <>
-                  kebijakan <span className="font-mono">{appr.policy.mode}</span>
+                  política <span className="font-mono">{appr.policy.mode}</span>
                   <span className="text-slate-400">
                     {' '}
-                    · tunggu {appr.policy.timeoutSec ?? '—'} dtk · {appr.policy.denyCount} aturan deny
+                    · espera {appr.policy.timeoutSec ?? '—'} s · {appr.policy.denyCount} regras de deny
                   </span>
                   {appr.policy.ageSeconds > STALE_APPROVAL && (
-                    <span className="ml-2 text-amber-400">· BASI ({age(appr.policy.ageSeconds)})</span>
+                    <span className="ml-2 text-amber-400">· DESATUALIZADO ({age(appr.policy.ageSeconds)})</span>
                   )}
                 </>
               )}
@@ -319,7 +319,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
 
             {appr.pending.length === 0 ? (
               <div className="rounded border border-slate-700 bg-slate-800/50 p-2 text-slate-400">
-                Tidak ada yang menunggu keputusan kamu.
+                Nada está esperando a sua decisão.
               </div>
             ) : (
               <div className="space-y-1">
@@ -334,25 +334,25 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
                 ))}
                 {appr.blockedAgents.length > 0 && (
                   <div className="text-[11px] text-red-400/80">
-                    agent berhenti: {appr.blockedAgents.join(' · ')}
+                    agentes parados: {appr.blockedAgents.join(' · ')}
                   </div>
                 )}
               </div>
             )}
             {(appr.notRead ?? 0) > 0 && (
-              <div className="text-[11px] text-amber-400">{appr.notRead} task tidak dibaca detailnya — daftar ini mungkin kurang</div>
+              <div className="text-[11px] text-amber-400">{appr.notRead} tarefas sem detalhe lido — esta lista pode estar incompleta</div>
             )}
 
             <div className="rounded border border-slate-700 bg-slate-800/50 p-2 text-slate-400">
               {appr.patterns.failure ? (
-                <span className="text-amber-300">Pola approval tidak terbaca: {appr.patterns.failure}</span>
+                <span className="text-amber-300">Padrão de aprovação ilegível: {appr.patterns.failure}</span>
               ) : appr.patterns.ageSeconds > STALE_APPROVAL ? (
-                <span className="text-amber-400">Pola approval BASI ({age(appr.patterns.ageSeconds)})</span>
+                <span className="text-amber-400">Padrão de aprovação DESATUALIZADO ({age(appr.patterns.ageSeconds)})</span>
               ) : appr.patterns.count === 0 ? (
-                `Pola approval ${appr.patterns.windowDays} hari: belum ada data.`
+                `Padrão de aprovação de ${appr.patterns.windowDays} dias: ainda não há dados.`
               ) : (
                 <>
-                  {appr.patterns.count} pola sering disetujui ({appr.patterns.windowDays} hari):{' '}
+                  {appr.patterns.count} padrões aprovados com frequência ({appr.patterns.windowDays} dias):{' '}
                   <span className="font-mono text-slate-300">
                     {appr.patterns.proposals
                       .slice(0, 5)
@@ -366,13 +366,13 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
         )}
       </section>
 
-      {!data && !err && <div className="py-8 text-center text-sm text-slate-400">membaca…</div>}
+      {!data && !err && <div className="py-8 text-center text-sm text-slate-400">lendo…</div>}
 
       {data && (
         <div className="space-y-5">
           {/* ---------- sumber & umur ---------- */}
           <section>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Sumber data</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Origem dos dados</h3>
             <div className="grid grid-cols-3 gap-2 text-xs max-[720px]:grid-cols-2">
               {(s?.sources || []).map((src) => (
                 <div key={src.name} className="rounded border border-slate-700 bg-slate-800/50 p-2">
@@ -380,7 +380,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
                     <span className={src.found ? 'text-green-400' : 'text-red-400'}>{src.found ? '●' : '○'}</span>
                     <span className="truncate font-mono">{src.name}</span>
                   </div>
-                  <div className="mt-1 text-slate-400">umur {age(src.ageSeconds)}</div>
+                  <div className="mt-1 text-slate-400">idade {age(src.ageSeconds)}</div>
                 </div>
               ))}
             </div>
@@ -392,37 +392,37 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
           {/* ---------- biaya ---------- */}
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Pemakaian & biaya{' '}
+              Uso e custo{' '}
               <span className="text-slate-500">
-                ({u!.windowDays >= 365 ? 'seumur hidup' : `${u!.windowDays} hari terakhir`})
+                ({u!.windowDays >= 365 ? 'todo o período' : `últimos ${u!.windowDays} dias`})
               </span>
-              {dbStale && <span className="ml-2 text-amber-400">· DATA BASI ({age(u!.ageSeconds)})</span>}
+              {dbStale && <span className="ml-2 text-amber-400">· DADOS DESATUALIZADOS ({age(u!.ageSeconds)})</span>}
             </h3>
             <div className="grid grid-cols-4 gap-2 text-xs max-[720px]:grid-cols-2">
               <div className="rounded border border-slate-700 bg-slate-800/50 p-2">
-                <div className="text-slate-400">biaya terhitung</div>
+                <div className="text-slate-400">custo calculado</div>
                 <div className="text-lg font-semibold text-emerald-400">{usd(u!.knownCostUsd)}</div>
               </div>
               <div className="rounded border border-slate-700 bg-slate-800/50 p-2">
-                <div className="text-slate-400">token masuk</div>
+                <div className="text-slate-400">tokens de entrada</div>
                 <div className="text-lg font-semibold">{tok(u!.totalInput)}</div>
               </div>
               <div className="rounded border border-slate-700 bg-slate-800/50 p-2">
-                <div className="text-slate-400">token keluar</div>
+                <div className="text-slate-400">tokens de saída</div>
                 <div className="text-lg font-semibold">{tok(u!.totalOutput)}</div>
               </div>
               <div className="rounded border border-slate-700 bg-slate-800/50 p-2">
-                <div className="text-slate-400">cache dibaca</div>
+                <div className="text-slate-400">cache lido</div>
                 <div className="text-lg font-semibold">{tok(u!.totalCache)}</div>
               </div>
             </div>
 
             {u!.unpricedModels.length > 0 && (
               <div className="mt-2 rounded border border-amber-800 bg-amber-950/40 p-2 text-xs">
-                <b className="text-amber-300">{u!.unpricedModels.length} model harganya belum diisi</b>
+                <b className="text-amber-300">{u!.unpricedModels.length} modelos ainda sem preço</b>
                 <span className="text-amber-200/80">
                   {' '}
-                  — {tok(u!.unpricedTokens)} token tidak ikut dihitung. Angka di atas adalah batas bawah,
+                  — {tok(u!.unpricedTokens)} tokens ficaram de fora da conta. O número acima é um piso,
                   bukan total.
                 </span>
                 <div className="mt-1 font-mono text-[11px] text-amber-300/70">{u!.unpricedModels.join(' · ')}</div>
@@ -434,10 +434,10 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
                 <thead className="text-slate-400">
                   <tr>
                     <th className="text-left font-normal">model</th>
-                    <th className="text-right font-normal">masuk</th>
-                    <th className="text-right font-normal">keluar</th>
-                    <th className="text-right font-normal">panggilan</th>
-                    <th className="text-right font-normal">biaya</th>
+                    <th className="text-right font-normal">entrada</th>
+                    <th className="text-right font-normal">saída</th>
+                    <th className="text-right font-normal">chamadas</th>
+                    <th className="text-right font-normal">custo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -448,7 +448,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
                       <td className="py-1 text-right text-slate-400">{tok(r.outputTokens)}</td>
                       <td className="py-1 text-right text-slate-400">{nfmt(r.apiCalls)}</td>
                       <td className="py-1 text-right font-semibold text-emerald-400">
-                        {r.costUsd == null ? <span className="text-amber-500">belum ada harga</span> : usd(r.costUsd)}
+                        {r.costUsd == null ? <span className="text-amber-500">ainda sem preço</span> : usd(r.costUsd)}
                       </td>
                     </tr>
                   ))}
@@ -465,17 +465,17 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
             {!data.providers || data.providers.providers.length === 0 ? (
               <div className="rounded border border-slate-700 bg-slate-800/50 p-2 text-xs text-slate-400">
                 {data.providers?.failure
-                  ? `Tidak bisa membaca statistik provider: ${data.providers.failure}`
-                  : 'Belum ada panggilan API tercatat di jendela ini.'}
+                  ? `Não foi possível ler as estatísticas do provedor: ${data.providers.failure}`
+                  : 'Ainda não há chamadas de API nesta janela.'}
               </div>
             ) : (
               <table className="w-full text-xs">
                 <thead className="text-slate-400">
                   <tr>
                     <th className="text-left font-normal">provider</th>
-                    <th className="text-right font-normal">panggilan</th>
-                    <th className="text-right font-normal">gagal</th>
-                    <th className="text-right font-normal">rasio</th>
+                    <th className="text-right font-normal">chamadas</th>
+                    <th className="text-right font-normal">falhas</th>
+                    <th className="text-right font-normal">taxa</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -484,7 +484,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
                       <td className="py-1 pr-2">
                         <span className={p.failures > 0 ? 'text-red-300' : 'text-emerald-300'}>{p.provider}</span>
                         {!p.confident && (
-                          <span className="ml-2 text-[10px] text-slate-500" title={`kurang dari 10 panggilan — rasionya belum bisa dipercaya`}>
+                          <span className="ml-2 text-[10px] text-slate-500" title="menos de 10 chamadas — a taxa ainda não é confiável">
                             sampel kecil
                           </span>
                         )}
@@ -506,7 +506,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
           {/* ---------- cadangan provider ---------- */}
           {data.fallback && (
             <section>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Cadangan provider</h3>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Provedor reserva</h3>
               {data.fallback.kind === 'empty' && (
                 <div className="rounded border border-slate-700 bg-slate-800/50 p-2 text-xs text-slate-400">
                   Sudah terisi.
@@ -520,7 +520,7 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
               {data.fallback.kind === 'propose' && (
                 <div className="rounded border border-slate-600 bg-slate-800/50 p-2 text-xs">
                   <div className="text-slate-300">
-                    Usulan: <span className="font-mono">{data.fallback.proposed[0]?.model}</span> lewat{' '}
+                    Sugestão: <span className="font-mono">{data.fallback.proposed[0]?.model}</span> via{' '}
                     <span className="font-mono">{data.fallback.proposed[0]?.provider}</span>
                   </div>
                   <div className="mt-1 text-slate-400">{data.fallback.why}</div>
@@ -533,16 +533,16 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
                         body: JSON.stringify({ action: 'setFallback' }),
                       })
                       const j = await res.json()
-                      setNotice(res.ok ? j.did : `GAGAL: ${j?.error?.message}`)
+                      setNotice(res.ok ? j.did : `FALHOU: ${j?.error?.message}`)
                       load()
                     }}
                     className="mt-2 rounded border border-red-700 px-3 py-1 text-red-300 hover:bg-red-950/40"
-                    title="Mengubah provider yang dipakai SELURUH instalasi. Cadangan berkas dibuat dulu."
+                    title="Troca o provedor usado por TODA a instalação. Um backup do arquivo é feito antes."
                   >
-                    pasang cadangan ini
+                    aplicar este reserva
                   </button>
                   <div className="mt-1 text-[10px] text-amber-400/80">
-                    Ini mengubah provider yang dipakai SELURUH instalasi, termasuk agent yang sedang bekerja.
+                    Isto troca o provedor usado por TODA a instalação, inclusive agentes que estão trabalhando.
                   </div>
                 </div>
               )}
@@ -552,16 +552,16 @@ export default function SystemPanel({ open, onClose }: { open: boolean; onClose:
           {/* ---------- error ---------- */}
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Kegagalan 24 jam terakhir
-              {logStale && <span className="ml-2 text-amber-400">· LOG BASI ({age(e!.ageSeconds)})</span>}
+              Falhas nas últimas 24 horas
+              {logStale && <span className="ml-2 text-amber-400">· LOG DESATUALIZADO ({age(e!.ageSeconds)})</span>}
             </h3>
             {e!.total === 0 ? (
               <div className="rounded border border-slate-700 bg-slate-800/50 p-3 text-xs text-slate-400">
-                Tidak ada kegagalan tercatat dalam 24 jam terakhir.
+                Nenhuma falha registrada nas últimas 24 horas.
               </div>
             ) : (
               <>
-                <div className="mb-2 text-xs text-slate-400">{nfmt(e!.total)} baris bermasalah</div>
+                <div className="mb-2 text-xs text-slate-400">{nfmt(e!.total)} linhas com problema</div>
                 <div className="space-y-1">
                   {e!.buckets.map((b) => {
                     const critical = /5xx|rate|ditolak|context/.test(b.kind)

@@ -28,10 +28,10 @@ export default function OfficeNameDialog({ onClose }: { onClose: () => void }) {
   return (
     <div className="vp-modal-backdrop" onClick={onClose}>
       <div className="vp-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Nama kantor</h3>
-        <p className="vp-sub">Muncul di papan nama atas pintu masuk. Tersimpan di database.</p>
+        <h3>Nome do escritório</h3>
+        <p className="vp-sub">Aparece na placa acima da entrada. Fica salvo no banco do escritório.</p>
         <label className="vp-field">
-          <span>Nama</span>
+          <span>Nome</span>
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}
@@ -44,10 +44,10 @@ export default function OfficeNameDialog({ onClose }: { onClose: () => void }) {
         </label>
         <div className="vp-modal-actions">
           <button className="vp-btn" onClick={onClose} disabled={busy}>
-            Batal
+            Cancelar
           </button>
           <button className="vp-btn primary" onClick={() => void save()} disabled={busy}>
-            {busy ? 'Menyimpan…' : 'Simpan'}
+            {busy ? 'Salvando…' : 'Salvar'}
           </button>
         </div>
       </div>

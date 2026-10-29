@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSession } from '@/lib/auth/require-session'
 import {
   claimAvatar,
   getOfficeName,
@@ -22,7 +23,9 @@ export const dynamic = 'force-dynamic'
  * to the office itself. Keeping them apart means a broken Hermes install still
  * lets the room render, and the office's own tables never risk the CLI's schema.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   try {
     // First run: populate the dummy roster so the building is not empty. Idempotent
     // — it only fires when the table has no rows at all.
@@ -75,6 +78,8 @@ function cleanAvatar(raw: unknown): AvatarWrite | null {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   // Same-origin write guard, exactly like the other mutating routes: this server
   // is exposed on a public port, and these actions write to disk.
   const denied = assertLocalWriteRequest(req)

@@ -3,6 +3,7 @@ import { listTasks } from '@/lib/hermes/kanban'
 import { getTaskDetail } from '@/lib/hermes/kanban'
 import { readBoard } from '@/lib/hermes/board'
 import { readPause } from '@/lib/hermes/control'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,9 @@ export const dynamic = 'force-dynamic'
  * running, review). Tiap `kanban show` adalah satu proses Python baru (~1,4 s), jadi
  * mengambilnya untuk SELURUH papan akan membuat endpoint ini lebih lambat daripada gunanya.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   try {
     const tasks = await listTasks({ includeArchived: false })
     const worthReading = tasks.filter((t) => t.status === 'blocked' || t.status === 'running' || t.status === 'review')

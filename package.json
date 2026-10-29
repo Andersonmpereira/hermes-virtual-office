@@ -12,7 +12,9 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "selftest": "tsx scripts/selftest.ts"
+    "selftest": "tsx scripts/selftest.ts",
+    "test:auth": "tsx scripts/auth-selftest.ts",
+    "hash:office-password": "tsx scripts/hash-office-password.ts"
   },
   "dependencies": {
     "next": "^15.1.0",

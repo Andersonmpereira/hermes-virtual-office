@@ -70,8 +70,8 @@ export default function PeekPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, message: msg }),
       })
-      if (!res.ok) throw new Error(res.error || 'aksi gagal')
-      setNote(action === 'steer' ? 'Arahan terkirim ke worker.' : 'Worker claim dilepas.')
+      if (!res.ok) throw new Error(res.error || 'a ação falhou')
+      setNote(action === 'steer' ? 'Orientação enviada ao worker.' : 'O worker foi solto.')
       setMsg('')
       void load()
     } catch (e) {
@@ -84,11 +84,11 @@ export default function PeekPanel() {
   return (
     <aside className="vp-panel right-0">
       <header className="vp-panel-head">
-        <h2>Meja {desk + 1} · {agent?.displayName || 'kosong'}</h2>
-        <button className="vp-x" onClick={() => setPeek(null)} aria-label="Tutup">×</button>
+        <h2>Mesa {desk + 1} · {agent?.displayName || 'vazio'}</h2>
+        <button className="vp-x" onClick={() => setPeek(null)} aria-label="Fechar">×</button>
       </header>
 
-      {!agent && <div className="vp-pad vp-muted">Tidak ada agent di meja ini.</div>}
+      {!agent && <div className="vp-pad vp-muted">Não há agente nesta mesa.</div>}
 
       {agent && (
         <div className="vp-pad flex flex-col gap-3">
@@ -96,24 +96,24 @@ export default function PeekPanel() {
             <span>status</span><b>{agent.status}</b>
           </div>
           <div className="vp-kv">
-            <span>tugas</span><b>{task?.title || '— tidak ada tugas aktif —'}</b>
+            <span>tarefa</span><b>{task?.title || '— nenhuma tarefa ativa —'}</b>
           </div>
           {task && <code className="vp-code-block">{task.id}</code>}
 
           {task && (
             <>
               <Collapsible
-                label="Log terakhir"
+                label="Último log"
                 text={log}
                 count={log.trim() ? log.trim().split('\n').length : undefined}
                 defaultOpen
-                empty="log masih kosong"
+                empty="o log ainda está vazio"
               />
 
               <Collapsible
-                label="Riwayat run"
+                label="Histórico de execuções"
                 count={runs.length}
-                empty="belum ada run"
+                empty="ainda não há execuções"
               >
                 <div className="flex flex-col gap-1">
                   {runs.slice(-4).reverse().map((r) => (
@@ -127,20 +127,20 @@ export default function PeekPanel() {
                 </div>
               </Collapsible>
 
-              <div className="vp-sub">ARAHKAN / HENTIKAN</div>
+              <div className="vp-sub">ORIENTAR / PARAR</div>
               <textarea
                 className="vp-input"
                 rows={3}
-                placeholder="fokus ke test postgres saja"
+                placeholder="foque só no teste do postgres"
                 value={msg}
                 onChange={(e) => setMsg(e.target.value)}
               />
               <div className="flex gap-2">
                 <button className="vp-btn" disabled={busy || !msg.trim()} onClick={() => act('steer')}>
-                  Steer
+                  Orientar
                 </button>
                 <button className="vp-btn vp-btn-warn" disabled={busy} onClick={() => act('cancel')}>
-                  Hentikan
+                  Parar
                 </button>
               </div>
               {note && <div className="vp-note">{note}</div>}

@@ -38,7 +38,7 @@ export async function readJson<T = unknown>(r: Response): Promise<ApiResult<T>> 
       ok: false,
       status,
       data: null,
-      error: `tidak bisa membaca balasan server (HTTP ${status})`,
+      error: `Não foi possível ler a resposta do servidor (HTTP ${status})`,
     }
   }
 
@@ -49,7 +49,7 @@ export async function readJson<T = unknown>(r: Response): Promise<ApiResult<T>> 
       ok: r.ok,
       status,
       data: null,
-      error: r.ok ? null : `server membalas kosong (HTTP ${status})`,
+      error: r.ok ? null : `O servidor respondeu vazio (HTTP ${status})`,
     }
   }
 
@@ -64,8 +64,8 @@ export async function readJson<T = unknown>(r: Response): Promise<ApiResult<T>> 
       status,
       data: null,
       error: looksHtml
-        ? `server membalas halaman HTML, bukan JSON (HTTP ${status}) — biasanya proxy atau backend mati`
-        : `balasan server bukan JSON (HTTP ${status})`,
+        ? `O servidor respondeu com HTML, não JSON (HTTP ${status}) — em geral o proxy ou o backend está fora`
+        : `A resposta do servidor não é JSON (HTTP ${status})`,
     }
   }
 
@@ -80,7 +80,7 @@ export async function readJson<T = unknown>(r: Response): Promise<ApiResult<T>> 
     ok: r.ok,
     status,
     data: parsed as T,
-    error: r.ok ? null : serverMsg || `permintaan gagal (HTTP ${status})`,
+    error: r.ok ? null : serverMsg || `A requisição falhou (HTTP ${status})`,
   }
 }
 
@@ -94,6 +94,13 @@ export async function fetchJson<T = unknown>(
 ): Promise<ApiResult<T>> {
   try {
     const r = await fetch(input, init)
+    if (
+      r.status === 401 &&
+      typeof window !== 'undefined' &&
+      !String(input).includes('/api/auth/login')
+    ) {
+      window.location.assign('/login')
+    }
     return await readJson<T>(r)
   } catch (e) {
     // Network-level failure: the request never got a reply.
@@ -101,7 +108,7 @@ export async function fetchJson<T = unknown>(
       ok: false,
       status: 0,
       data: null,
-      error: `tidak bisa menghubungi server: ${(e as Error).message}`,
+      error: `Não foi possível contatar o servidor: ${(e as Error).message}`,
     }
   }
 }

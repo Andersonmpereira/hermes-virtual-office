@@ -3,6 +3,7 @@ import { getJob } from '@/lib/hermes/cron'
 import { listAgents, listTasks } from '@/lib/hermes/kanban'
 import { visibleNames } from '@/lib/hermes/office-membership'
 import type { Candidate } from '@/types/hermes'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,8 @@ export const dynamic = 'force-dynamic'
  * `/api/hermes/tasks`.
  */
 export async function GET(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const from = req.nextUrl.searchParams.get('from')
   if (!from) {
     return NextResponse.json(

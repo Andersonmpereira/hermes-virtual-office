@@ -29,15 +29,17 @@ export type { AvatarKind, AvatarState, AvatarWrite } from './types'
  * between machines without ever being committed. `OFFICE_DB_PATH` overrides it
  * for tests.
  */
-const DB_PATH = process.env.OFFICE_DB_PATH ?? resolve(process.cwd(), 'data/office.db')
+function officeDbPath(): string {
+  return process.env.OFFICE_DB_PATH ?? resolve(process.cwd(), 'data/office.db')
+}
 
 let db: DatabaseSync | null = null
 
 /** Open (once) and migrate. Safe to call on every request. */
 export function officeDb(): DatabaseSync {
   if (db) return db
-  mkdirSync(dirname(DB_PATH), { recursive: true })
-  const d = new DatabaseSync(DB_PATH)
+  mkdirSync(dirname(officeDbPath()), { recursive: true })
+  const d = new DatabaseSync(officeDbPath())
   d.exec(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;

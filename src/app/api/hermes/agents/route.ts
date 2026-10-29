@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSession } from '@/lib/auth/require-session'
 import {
   createProfile,
   deleteProfile,
@@ -54,7 +55,9 @@ async function readNeedsGatewayRestart(): Promise<boolean | null> {
  * touch the profile or its tasks. `kill` is the destructive one: it deletes the
  * profile and purges its tasks.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   try {
     const [assignees, tasks, profiles] = await Promise.all([
       listAssignees(),
@@ -160,6 +163,8 @@ export async function GET() {
  * despawns on arrival, rather than vanishing at its desk.
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
   const body = await req.json().catch(() => ({}))

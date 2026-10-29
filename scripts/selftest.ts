@@ -1824,7 +1824,7 @@ void (async () => {
     if (!/jobsFailure/.test(routeSrc)) problems.push('route never emits jobsFailure')
     if (!/cron_unreadable/.test(routeSrc)) problems.push('route never answers cron_unreadable for ?id= on corrupt read')
     const panelSrc = readFileSync(new URL('../src/components/CronPanel.tsx', import.meta.url), 'utf8')
-    if (!/tak terbaca/i.test(panelSrc)) problems.push('panel has no "tak terbaca" banner')
+    if (!/ilegível/i.test(panelSrc)) problems.push('panel has no unreadable-schedule banner')
     if (!/jobsFailure/.test(panelSrc)) problems.push('panel never reads jobsFailure')
     if (!/!jobsFailure/.test(panelSrc)) problems.push('panel still shows "belum ada job" even when the read failed')
     check('honest-cron-1: route emits and panel displays the cron read failure', problems.length === 0, problems.join(' | '))
@@ -5181,8 +5181,8 @@ void (async () => {
     if (!/listServedAgents/.test(rSrc)) problems.push('route tak mengenal served-A2A')
     // UI: pemilih mode + label jujur.
     const uSrc = readFileSync(new URL('../src/components/MeetingPanel.tsx', import.meta.url), 'utf8')
-    if (!/MODE RAPAT/.test(uSrc)) problems.push('UI tanpa pemilih mode')
-    if (!/BUKAN agent/.test(uSrc)) problems.push('UI tanpa label simulasi-jujur')
+    if (!/MODO DA REUNIÃO/.test(uSrc)) problems.push('UI tanpa pemilih mode')
+    if (!/NÃO é um agente/.test(uSrc)) problems.push('UI tanpa label simulasi-jujur')
     if (!/mode: meetingMode/.test(uSrc)) problems.push('UI tak mengirim mode')
 
     check('rapat-a2a-1: tolak jujur, gagal bukan karangan, mode tersimpan', problems.length === 0, problems.join(' | '))
@@ -5231,7 +5231,7 @@ void (async () => {
     if (!/tidak ada rapat yang berjalan/.test(cSrc)) problems.push('route cancel tanpa pesan jujur tak-ada-rapat')
     if (!/already_cancelled/.test(cSrc)) problems.push('route cancel tanpa already_cancelled')
     // UI: tombol hanya saat live (rapat berjalan), tak ada tombol = tak ada sukses palsu.
-    if (!/Batalkan rapat/.test(uSrc2)) problems.push('UI tanpa tombol Batalkan rapat')
+    if (!/Cancelar reunião/.test(uSrc2)) problems.push('UI tanpa tombol Cancelar reunião')
     if (!/{live &&/.test(uSrc2)) problems.push('tombol batal tak digerbang live')
     if (!/\/api\/hermes\/meeting\/cancel/.test(uSrc2)) problems.push('UI tak memanggil route cancel')
     // Kasus negatif (a): bangun arsip batal tiruan, pastikan parser menandainya
@@ -5568,19 +5568,19 @@ void (async () => {
 
     // 4. UI: pop up jujur + tombol tak klaim aktif + toggle default nyala.
     const rnSrc = readFileSync(new URL('../src/components/RestartNotice.tsx', import.meta.url), 'utf8')
-    if (!/Silahkan restart server/.test(rnSrc)) problems.push('pop up tanpa kalimat "Silahkan restart server"')
-    if (!/dibaca SEKALI saat gateway boot/.test(rnSrc)) problems.push('pop up tanpa kenapa (boot-sekali)')
-    if (!/BELUM bisa dipanggil/.test(rnSrc)) problems.push('pop up tanpa apa-yang-belum-bisa')
-    if (!/akan menolaknya/.test(rnSrc)) problems.push('pop up tanpa sebut rapat-a2a-menolak')
-    if (!/Restart sekarang/.test(rnSrc)) problems.push('pop up tanpa tombol restart')
+    if (!/Reinicie o servidor/.test(rnSrc)) problems.push('pop up tanpa kalimat "Reinicie o servidor"')
+    if (!/lida UMA VEZ na inicialização do gateway/.test(rnSrc)) problems.push('pop up tanpa kenapa (boot-sekali)')
+    if (!/AINDA NÃO pode ser chamado/.test(rnSrc)) problems.push('pop up tanpa apa-yang-belum-bisa')
+    if (!/vai recusá-lo/.test(rnSrc)) problems.push('pop up tanpa sebut rapat-a2a-menolak')
+    if (!/Reiniciar agora/.test(rnSrc)) problems.push('pop up tanpa tombol restart')
     if (!/gateway-restart/.test(rnSrc)) problems.push('tombol tak memakai route gateway-restart')
-    if (!/dijadwalkan/.test(rnSrc)) problems.push('tombol mengklaim selesai (harus "dijadwalkan")')
+    if (!/agendado/.test(rnSrc)) problems.push('tombol mengklaim selesai (harus "agendado")')
     if (!/rows=\{2\}/.test(rnSrc)) problems.push('textarea manual bukan rows=2')
     const aspSrc = readFileSync(new URL('../src/components/AgentSpawnPanel.tsx', import.meta.url), 'utf8')
     if (!/useState\(true\)/.test(aspSrc)) problems.push('toggle A2A tidak default-nyala')
-    if (!/otomatis terdaftar A2A/.test(aspSrc)) problems.push('form tanpa teks akibat-otomatis')
+    if (!/registrado automaticamente no A2A/.test(aspSrc)) problems.push('form tanpa teks akibat-otomatis')
     if (!/RestartNotice/.test(aspSrc)) problems.push('panel agent tak merender pop up restart')
-    if (!/Terdaftar, belum aktif/.test(aspSrc) || !/A2A siap/.test(aspSrc) || !/Belum terdaftar A2A/.test(aspSrc)) {
+    if (!/Registrado, ainda inativo/.test(aspSrc) || !/A2A pronto/.test(aspSrc) || !/Ainda não registrado no A2A/.test(aspSrc)) {
       problems.push('checklist 3-state tak lengkap')
     }
     const dsdSrc = readFileSync(new URL('../src/components/DummySpawnDialog.tsx', import.meta.url), 'utf8')
@@ -5667,10 +5667,10 @@ void (async () => {
     const rnSrc2 = readFileSync(new URL('../src/components/RestartNotice.tsx', import.meta.url), 'utf8')
     if (!/\/api\/hermes\/board/.test(rnSrc2)) problems.push('pop up tak membaca board read-only')
     if (!/role="alert"/.test(rnSrc2)) problems.push('pop up tanpa blok peringatan di-body')
-    if (!/membunuh worker-nya/.test(rnSrc2)) problems.push('pop up tanpa kalimat konsekuensi')
+    if (!/encerra o worker/.test(rnSrc2)) problems.push('pop up tanpa kalimat konsekuensi')
     if (!/type="checkbox"/.test(rnSrc2)) problems.push('pop up tanpa centang konfirmasi')
     if (!/confirm: true/.test(rnSrc2)) problems.push('pop up tak mengirim confirm:true')
-    if (!/Saya tahu restart akan membunuh/.test(rnSrc2)) problems.push('pop up tanpa teks centang eksplisit')
+    if (!/Sei que reiniciar vai encerrar/.test(rnSrc2)) problems.push('pop up tanpa teks centang eksplisit')
     for (const m of rnSrc2.match(/<textarea[\s\S]*?\/>/g) ?? []) {
       const r = /rows=\{(\d+)\}/.exec(m)
       if (!r || Number(r[1]) < 2) problems.push('textarea pop up < 2 baris')
@@ -5903,7 +5903,7 @@ void (async () => {
     if (!/runDoctor/.test(srSrc)) problems.push('route selfrepair tak memeriksa-ulang doctor sesudah jalan')
     if (!/previewRepairs/.test(srSrc) || !/runRepairs/.test(srSrc)) problems.push('route selfrepair tak memakai previewRepairs/runRepairs')
     const aspSrc = readFileSync(new URL('../src/components/AgentSpawnPanel.tsx', import.meta.url), 'utf8')
-    if (!/daftarkan ke A2A/.test(aspSrc)) problems.push('panel agent tanpa tombol daftarkan-ke-A2A')
+    if (!/registrar no A2A/.test(aspSrc)) problems.push('panel agent tanpa tombol daftarkan-ke-A2A')
     if (!/action, 'serve'/.test(aspSrc) && !/'serve', r\.name/.test(aspSrc)) problems.push('panel tak memanggil aksi serve')
     if (!/a2a === 'unlisted'/.test(aspSrc)) problems.push('tombol serve tak dibatasi baris unlisted')
     // UI-CLEAN-1: DoctorPanel dihapus — alur pratinjau→jalankan→laporan+
@@ -5983,8 +5983,8 @@ void (async () => {
     // 6. Tombol serve = pratinjau + laporan memanggil (bukan cuma served):
     // panel spawn lapor toolset+peer, semua textarea >= 2 baris.
     const aspSrc2 = readFileSync(new URL('../src/components/AgentSpawnPanel.tsx', import.meta.url), 'utf8')
-    if (!/toolset a2a ditambahkan \(bisa memanggil\)/.test(aspSrc2)) problems.push('tombol serve tanpa lapor toolset-memanggil')
-    if (!/peer .* didaftarkan/.test(aspSrc2)) problems.push('tombol serve tanpa lapor peer')
+    if (!/toolset a2a adicionado \(pode chamar\)/.test(aspSrc2)) problems.push('tombol serve tanpa lapor toolset-memanggil')
+    if (!/peer .* registrado/.test(aspSrc2)) problems.push('tombol serve tanpa lapor peer')
     for (const m of aspSrc2.match(/<textarea[\s\S]*?\/>/g) ?? []) {
       const r = /rows=\{(\d+)\}/.exec(m)
       if (!r || Number(r[1]) < 2) problems.push('textarea spawn < 2 baris')

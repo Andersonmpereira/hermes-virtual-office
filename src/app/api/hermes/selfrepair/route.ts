@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { assertLocalWriteRequest } from '@/lib/local-guard'
 import { runDoctor } from '@/lib/hermes/doctor'
 import { previewRepairs, runRepairs } from '@/lib/hermes/selfrepair'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,8 @@ export const dynamic = 'force-dynamic'
  * Keduanya idempoten: keadaan sehat → tak ada yang berubah.
  */
 export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   try {
     const preview = await previewRepairs()
     return NextResponse.json({ success: true, ...preview })
@@ -28,6 +31,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
   try {

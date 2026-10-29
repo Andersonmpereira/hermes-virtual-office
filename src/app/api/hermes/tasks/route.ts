@@ -4,11 +4,14 @@ import { visible } from '@/lib/hermes/office-membership'
 import { blockedAssigneesFor } from '@/lib/hermes/approvals'
 import type { TaskOrigin } from '@/types/hermes'
 import { assertLocalWriteRequest } from '@/lib/local-guard'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
 /** The board: tasks plus the agents staffing them. */
-export async function GET() {
+export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   try {
     // `--archived` is inclusive, so this is the live board PLUS the archive: the
     // 2D view has an ARSIP column that stayed permanently empty without it.
@@ -48,6 +51,8 @@ export async function GET() {
  * panel can list what it produced. It is written to `created_by` as a marker.
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
   const body = await req.json().catch(() => null)

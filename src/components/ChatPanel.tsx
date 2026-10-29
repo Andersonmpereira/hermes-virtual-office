@@ -39,14 +39,14 @@ function when(iso: string): string {
   if (Number.isNaN(t)) return ''
   const diff = Date.now() - t
   const mins = Math.round(diff / 60_000)
-  if (mins < 1) return 'baru saja'
-  if (mins < 60) return `${mins} mnt`
-  if (diff < 86_400_000) return `${Math.round(mins / 60)} jam`
-  return `${Math.round(diff / 86_400_000)} hr`
+  if (mins < 1) return 'agora'
+  if (mins < 60) return `${mins} min`
+  if (diff < 86_400_000) return `${Math.round(mins / 60)} h`
+  return `${Math.round(diff / 86_400_000)} d`
 }
 
 function clock(ts: number): string {
-  return new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+  return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
 /** Initials for the avatar bubble, like a chat app. */
@@ -102,7 +102,7 @@ export default function ChatPanel({
       profiles?: string[]
     }>('/api/hermes/chat', { cache: 'no-store' })
     if (!res.ok) {
-      setErr(res.error || 'gagal memuat daftar percakapan')
+      setErr(res.error || 'não foi possível carregar a lista de conversas')
       setLoading(false)
       return
     }
@@ -134,7 +134,7 @@ export default function ChatPanel({
       .then((res) => {
         if (!alive) return
         if (!res.ok) {
-          setErr(res.error || 'gagal memuat percakapan')
+          setErr(res.error || 'não foi possível carregar a conversa')
           return
         }
         setSession(res.data?.session ?? null)
@@ -167,7 +167,7 @@ export default function ChatPanel({
         body: JSON.stringify({ agent: openAgent, message: text }),
       })
       if (!res.ok || !res.data) {
-        setErr(res.error || 'agent tidak menjawab')
+        setErr(res.error || 'o agente não respondeu')
         // Roll the optimistic bubble back so the transcript matches what the agent
         // actually received.
         setMessages((m) => m.slice(0, -1))
@@ -177,7 +177,7 @@ export default function ChatPanel({
       setSession(res.data.session)
       setMessages((m) => [
         ...m,
-        { role: 'assistant', content: res.data!.reply || '(kosong)', ts: Date.now() },
+        { role: 'assistant', content: res.data!.reply || '(vazio)', ts: Date.now() },
       ])
       void loadList()
     } finally {
@@ -193,7 +193,7 @@ export default function ChatPanel({
       method: 'DELETE',
     })
     if (!res.ok) {
-      setErr(res.error || 'gagal menghapus thread')
+      setErr(res.error || 'não foi possível apagar a conversa')
       setBusy(false)
       return
     }
@@ -207,7 +207,7 @@ export default function ChatPanel({
   async function createAgent() {
     const name = newName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '')
     if (!name) {
-      setErr('nama agent hanya huruf kecil, angka, - dan _')
+      setErr('o nome do agente só pode ter letras minúsculas, números, - e _')
       return
     }
     setCreateBusy(true)
@@ -219,7 +219,7 @@ export default function ChatPanel({
         body: JSON.stringify({ action: 'create', name }),
       })
       if (!res.ok) {
-        setErr(res.error || 'gagal membuat agent')
+        setErr(res.error || 'não foi possível criar o agente')
         return
       }
       setNewName('')
@@ -245,14 +245,14 @@ export default function ChatPanel({
   return (
     <FullPanel
       onClose={onClose}
-      label={openAgent ? `Chat dengan ${openAgent}` : 'Chat'}
+      label={openAgent ? `Chat com ${openAgent}` : 'Chat'}
       tall
       className="vp-chat"
       bodyClassName="vp-pad flex flex-col gap-3 vp-chat-body"
       title={
         openAgent ? (
           <div className="vp-chat-head">
-            <button className="vp-chat-back" onClick={() => setOpenAgent(null)} aria-label="Kembali">
+            <button className="vp-chat-back" onClick={() => setOpenAgent(null)} aria-label="Voltar">
               ←
             </button>
             <span className="vp-chat-av" style={{ background: `hsl(${hue(openAgent)} 42% 32%)` }}>
@@ -260,7 +260,7 @@ export default function ChatPanel({
             </span>
             <div className="vp-chat-head-name">
               <b>{openAgent}</b>
-              <i>{session ? `${session.messageCount} pesan` : 'percakapan baru'}</i>
+              <i>{session ? `${session.messageCount} mensagens` : 'conversa nova'}</i>
             </div>
           </div>
         ) : (
@@ -283,18 +283,18 @@ export default function ChatPanel({
             className="vp-input"
             value={newName}
             autoFocus
-            placeholder="nama agent (mis. riset, backend)"
+            placeholder="nome do agente (ex.: pesquisa, backend)"
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') void createAgent()
             }}
           />
           <button className="vp-btn" disabled={createBusy || !newName.trim()} onClick={createAgent}>
-            {createBusy ? '…' : 'Buat'}
+            {createBusy ? '…' : 'Criar'}
           </button>
           <div className="vp-note">
-            Agent = profil Hermes. Tiap agent punya memory sendiri, dan muncul di kantor
-            setelah dibuat.
+            Agente = perfil do Hermes. Cada agente tem a própria memória e aparece no
+            escritório depois de criado.
           </div>
         </div>
       )}
@@ -302,7 +302,7 @@ export default function ChatPanel({
       {!openAgent ? (
         /* ------------------------------------------------- the chat list -- */
         <>
-          {loading && <div className="vp-muted">memuat…</div>}
+          {loading && <div className="vp-muted">carregando…</div>}
           <div className="flex flex-col">
             {rows.map((name) => {
               const s = byAgent.get(name)
@@ -313,7 +313,7 @@ export default function ChatPanel({
                   className="vp-chat-row"
                   onClick={() => setOpenAgent(name)}
                   disabled={!canChat}
-                  title={canChat ? '' : 'belum punya profil'}
+                  title={canChat ? '' : 'ainda sem perfil'}
                 >
                   <span
                     className="vp-chat-av"
@@ -327,7 +327,7 @@ export default function ChatPanel({
                       <i>{s ? when(s.updatedAt) : ''}</i>
                     </span>
                     <span className="vp-chat-row-sub">
-                      {s ? s.title : canChat ? 'mulai percakapan' : 'belum punya profil'}
+                      {s ? s.title : canChat ? 'iniciar conversa' : 'ainda sem perfil'}
                     </span>
                   </span>
                 </button>
@@ -335,7 +335,7 @@ export default function ChatPanel({
             })}
             {!loading && !rows.length && (
               <div className="vp-muted">
-                belum ada agent — klik <b>+ Agent</b> untuk membuat satu
+                ainda não há agentes — clique em <b>+ Agent</b> para criar um
               </div>
             )}
           </div>
@@ -344,13 +344,13 @@ export default function ChatPanel({
         /* -------------------------------------------------- the conversation -- */
         <>
           <div className="vp-chat-scroll" ref={scroller}>
-            {loading && <div className="vp-muted">memuat riwayat…</div>}
+            {loading && <div className="vp-muted">carregando o histórico…</div>}
             {!loading && !messages.length && (
               <div className="vp-chat-empty">
-                Mulai percakapan dengan <b>{openAgent}</b>.
+                Comece a conversa com <b>{openAgent}</b>.
                 <br />
                 <span className="vp-muted">
-                  Pesan disimpan di memory agent ini dan tetap ada setelah aplikasi restart.
+                  As mensagens ficam na memória deste agente e continuam depois de reiniciar o aplicativo.
                 </span>
               </div>
             )}
@@ -376,7 +376,7 @@ export default function ChatPanel({
               className="vp-input"
               rows={2}
               value={draft}
-              placeholder="Tulis pesan…"
+              placeholder="Escreva a mensagem…"
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -389,7 +389,7 @@ export default function ChatPanel({
               className="vp-chat-send"
               disabled={busy || !draft.trim()}
               onClick={send}
-              aria-label="Kirim"
+              aria-label="Enviar"
             >
               ➤
             </button>
@@ -397,7 +397,7 @@ export default function ChatPanel({
 
           {session && (
             <button className="vp-chat-reset" disabled={busy} onClick={resetThread}>
-              Hapus riwayat percakapan ini
+              Apagar o histórico desta conversa
             </button>
           )}
         </>

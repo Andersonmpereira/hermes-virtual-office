@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cancelMeeting } from '@/lib/hermes/meeting'
 import { assertLocalWriteRequest } from '@/lib/local-guard'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,8 @@ export const dynamic = 'force-dynamic'
  * permintaan baru = 200 `cancel_requested`.
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
   const body = await req.json().catch(() => ({}))

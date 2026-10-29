@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSession } from '@/lib/auth/require-session'
 import {
   activeMeeting,
   isConfigured,
@@ -24,6 +25,8 @@ export const dynamic = 'force-dynamic'
  * `GET /api/hermes/meeting?id=<meetingId>` returns one archived transcript.
  */
 export async function GET(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const id = req.nextUrl.searchParams.get('id')
   if (id) {
     const body = await readArchived(id)
@@ -63,6 +66,8 @@ export async function GET(req: NextRequest) {
  * the old LLM-voices-everyone behavior, labelled honestly in the archive.
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   const denied = assertLocalWriteRequest(req)
   if (denied) return denied
   const body = await req.json().catch(() => ({}))

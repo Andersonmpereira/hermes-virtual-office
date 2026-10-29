@@ -88,7 +88,7 @@ export default function RestartNotice({
         kind: 'running',
         count: cards.length,
         cards,
-        message: `${cards.length} card sedang dikerjakan — restart akan membunuh worker-nya, dan pekerjaan yang belum dikomit akan hilang.`,
+        message: `${cards.length} card em andamento — o reinício encerra o worker, e o trabalho ainda não commitado se perde.`,
       })
     }
     void load()
@@ -115,7 +115,7 @@ export default function RestartNotice({
       )
       if (res.ok) {
         // Jujur: dijadwalkan, BUKAN selesai. Halaman akan putus sebentar.
-        setRestartResult(res.data?.message ?? 'Restart dijadwalkan.')
+        setRestartResult(res.data?.message ?? 'Reinício agendado.')
         setRestartFailed(false)
       } else if (res.status === 409) {
         // Guard menolak — tampilkan daftar + kalimatnya DI POP UP (bukan log).
@@ -132,17 +132,17 @@ export default function RestartNotice({
             kind: 'running',
             count: res.data?.runningCount ?? rc.length,
             cards: rc,
-            message: res.data?.message ?? `${rc.length} card sedang dikerjakan — restart akan membunuh worker-nya, dan pekerjaan yang belum dikomit akan hilang.`,
+            message: res.data?.message ?? `${rc.length} card em andamento — o reinício encerra o worker, e o trabalho ainda não commitado se perde.`,
           })
         }
       } else {
         setRestartResult(
-          `${res.error ?? 'Restart gagal dijadwalkan.'} Jalankan manual: ${(res.data?.manual ?? [MANUAL_CMD]).join('  ·  ')}`,
+          `${res.error ?? 'Não foi possível agendar o reinício.'} Rode manualmente: ${(res.data?.manual ?? [MANUAL_CMD]).join('  ·  ')}`,
         )
         setRestartFailed(true)
       }
     } catch (e) {
-      setRestartResult(`Restart gagal dijadwalkan (${(e as Error).message}). Jalankan manual: ${MANUAL_CMD}`)
+      setRestartResult(`Não foi possível agendar o reinício (${(e as Error).message}). Rode manualmente: ${MANUAL_CMD}`)
       setRestartFailed(true)
     } finally {
       setRestartBusy(false)
@@ -162,19 +162,18 @@ export default function RestartNotice({
   return (
     <div className="vp-modal-backdrop" onClick={onClose}>
       <div className="vp-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Silahkan restart server</h3>
+        <h3>Reinicie o servidor</h3>
         <p className="vp-sub">
-          Setelan &quot;{agentName}&quot; TERSIMPAN, tapi baru BERLAKU setelah server restart — daftar served-agent
-          dibaca SEKALI saat gateway boot, tidak ada hot reload.
+          A configuração de &quot;{agentName}&quot; está SALVA, mas só VALE depois de reiniciar o servidor — a lista de agentes served é
+          lida UMA VEZ na inicialização do gateway, sem hot reload.
         </p>
         <p className="vp-note">
-          Sebelum restart: &quot;{agentName}&quot; BELUM bisa dipanggil lewat A2A, dan rapat mode <b>a2a</b> akan
-          menolaknya (menyebut dia belum di-serve).
+          Antes do reinício: &quot;{agentName}&quot; AINDA NÃO pode ser chamado via A2A, e a reunião no modo <b>a2a</b> vai recusá-lo (diz que ele ainda não está served).
         </p>
 
         {/* RESTART-SAFE-1: daftar card berjalan — DI POP UP, bukan di log. */}
         {probe.kind === 'loading' && (
-          <p className="vp-note">memeriksa card yang sedang dikerjakan…</p>
+          <p className="vp-note">verificando cards em andamento…</p>
         )}
         {probe.kind === 'running' && (
           <div className="vp-err" role="alert">
@@ -192,7 +191,7 @@ export default function RestartNotice({
         {probe.kind === 'unknown' && (
           <div className="vp-err" role="alert">
             <b>{probe.message}</b>
-            <div className="mt-1 text-xs">Centang di bawah berarti kamu memutuskan tanpa tahu — bukan kami yang mewakili.</div>
+            <div className="mt-1 text-xs">Marcar abaixo significa que você decide sem essa informação.</div>
           </div>
         )}
 
@@ -205,8 +204,8 @@ export default function RestartNotice({
               style={{ marginTop: 2 }}
             />
             <span>
-              Saya tahu restart akan membunuh worker yang sedang berjalan, dan pekerjaan yang belum dikomit akan
-              hilang. Tetap restart.
+              Sei que reiniciar vai encerrar o worker que está em execução, e o trabalho ainda não commitado se perde.
+              Reiniciar mesmo assim.
             </span>
           </label>
         )}
@@ -214,7 +213,7 @@ export default function RestartNotice({
         {!restartResult && (
           <div className="vp-modal-actions">
             <button className="vp-btn" onClick={onClose}>
-              Nanti saja
+              Agora não
             </button>
             <button
               className="vp-btn primary"
@@ -222,13 +221,13 @@ export default function RestartNotice({
               disabled={restartBusy || (needsConfirm && !confirmed)}
               title={
                 probe.kind === 'empty'
-                  ? 'Tidak ada card berjalan — restart langsung dijadwalkan'
+                  ? 'Nenhum card em andamento — o reinício é agendado agora'
                   : needsConfirm && !confirmed
-                    ? 'Centang konfirmasi dulu — ada pekerjaan berjalan (atau tak pasti)'
-                    : 'Restart sekarang'
+                    ? 'Marque a confirmação — há trabalho em andamento (ou não deu para saber)'
+                    : 'Reiniciar agora'
               }
             >
-              {restartBusy ? 'Menjadwalkan…' : 'Restart sekarang'}
+              {restartBusy ? 'Agendando…' : 'Reiniciar agora'}
             </button>
           </div>
         )}

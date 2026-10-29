@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { listModels } from '@/lib/hermes/kanban'
+import { requireSession } from '@/lib/auth/require-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,9 @@ export const dynamic = 'force-dynamic'
  * with — a hardcoded dropdown would drift from config.yaml. The CLI masks
  * api_key, so nothing secret leaves the server.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const unauthorized = requireSession(req)
+  if (unauthorized) return unauthorized
   try {
     return NextResponse.json({ models: await listModels() })
   } catch (err) {
